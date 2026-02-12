@@ -1,0 +1,14 @@
+// sslpublickey.js
+export class SSLPublicKey {
+    static PublicSSLKey =  `
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzFgqLiI1A+0mo3r5G+Q2
+QKGutFZjjiGXIotkOLsYQFLftfp1w0WXK0EnEw80XRyOw2fFeF7arJ1v/eAB753X
+PKL/HxrPxEywyWk7h7ZQi0Q45OOREAWvx1qLupY8N56CTfbZvtIRcfDY662sMFCB
+FxFUKqWgqAaTfK1m84/ii64AOjk6Qh8nttrYQEN8mxILTbqzL64Ims5Kha/FAV/w
+TnwvRzsk7YajaT/VQRe7SZlSFuGYK10waJQvwmNhxXwhiNa+newQOLFaSX/Kq7iT
+5tJnidPNwponUEcIGlsy4B698UHw983uJlgwgEmYi1DPQyp9lOmzJCE/C7UWLFuY
+uwIDAQAB
+-----END PUBLIC KEY-----
+`;
+}

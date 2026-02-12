@@ -40,12 +40,12 @@ service.interceptors.request.use(
 // 请求后拦截{"status":0,"errorCode":"","data":{"testId":"1"}}
 service.interceptors.response.use(
   (response) => {
-    const status = response.data.status; // 请求状态码
+    const code = response.data.code; // 请求状态码
     const responseData = response.data.data; // 获取的数据
     window.loading?.clear?.();
-    if (status !== 0) {
+    if (code !== 200) {
       // 请求异常
-      if (status === 2) {
+      if (code === 2) {
         // 重新登陆
         Toast("登录已失效，请重新登录");
         removeToken();
@@ -86,11 +86,11 @@ service.interceptors.response.use(
         }
       } else {
         // 提示错误码
-        const errorCode = response.data?.errorCode; // 错误码
+        const msg = response.data?.msg; // 错误码
         if (!response.config.hideErrorMessage) {
-          Toast(errorCode || "加载错误，请刷新页面重试~");
+          Toast(msg || "加载错误，请刷新页面重试~");
           window.loading?.clear?.();
-          return Promise.reject(errorCode);
+          return Promise.reject(msg);
         }
       }
       return Promise.reject(responseData || "网络错误，请重试~");
