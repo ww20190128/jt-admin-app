@@ -1,0 +1,67 @@
+// 答题进度条
+.question-progress-wrapper {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 20px;
+  margin: 0 auto;
+
+  .van-progress__portion {
+    background-color: #dad4ec !important;
+
+    
+  }
+
+  .van-progress__pivot {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 15px;
+    line-height: 15px;
+    border-radius: 10px;
+    padding: 0px 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: @theme-color !important;
+    color: #fff;
+    font-size: 11px;
+  }
+
+  .progress-item {
+    flex: 1;
+  }
+}
+
+.question-time-wraper {
+  padding-right: 20px;
+
+  height: 40px;
+  .align-center();
+
+  .clock-icon {
+    font-size: @font-size-base;
+  }
+
+  .time {
+    text-align: center;
+    width: 60px;
+    font-size: @font-size-sm;
+    color: @gray-color;
+
+  }
+
+  .notice-icon {
+    text-align: center;
+    font-size: @font-size-sm !important;
+    width: 15px;
+    height: 15px;
+    line-height: 15px;
+    border: 1px solid #f1f3f4;
+    border-radius: 2px;
+
+    justify-content: center;
+    font-weight: 100 !important;
+  }
+}

@@ -1,0 +1,203 @@
+// 报告标签样式
+// 渐变色
+
+@linear-gradient-green: linear-gradient(270deg, #84fab0 0%, #8fd3f4 100%);
+
+@bg-yellow-gradient: linear-gradient(270deg, #ffbd96, #f58f66);
+@bg-blue-gradient: linear-gradient(270deg, #9080eb, #5a49bc);
+
+
+// 靠左圆角标签
+.report-tag-red,
+.report-tag-purple,
+.report-tag-gray,
+.report-tag-orange,
+.report-tag-blue {
+    position: relative;
+    display: inline-block;
+    height: 35px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: -20px;
+    line-height: 35px;
+    border-top-right-radius: 30px;
+    border-bottom-right-radius: 30px;
+    &.report-tag-red {
+        background: #f5576c;
+    }
+    &.report-tag-purple {
+        background: linear-gradient(270deg, #b490ca 0%, #b490ca 100%);
+    }
+    &.report-tag-blue {
+        background: #a1c4fd;
+    }
+    &.report-tag-orange {
+        background-color: #fecc46 !important;
+    }
+    &.report-tag-gray {
+        background: #93a5cf;
+    }
+    &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 4px;
+        height: 100%;
+        background: #fecc46;
+
+       
+    }
+
+    span {
+        text-align: center;
+        position: relative;
+        padding-left: 15px;
+        padding-right: 20px;
+        height: 100%;
+        color: #fff !important;
+        font-size: 18px;
+        font-weight: 400;
+        line-height: 35px;
+        margin-right: 5px;
+    }
+}
+
+@color-lucency-yellow: hsla(51, 98%, 62%, 0.5);
+@color-lucency-blue: #6699FF;
+@color-lucency-green: hwb(165 5% 18%);
+@color-lucency-pink: hsla(313, 88%, 84%, 0.7);
+
+// 靠左三角标签
+.report-tag-triangle-red,
+.report-tag-triangle-yellow,
+.report-tag-triangle-blue,
+.report-tag-triangle-green,
+.report-tag-triangle-pink {
+    text-align: center;
+    line-height: 40px;
+  
+    position: relative;
+    height: 40px;
+    width: 100px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    color: #fff;
+    text-align: left;
+    padding-left: 10px;
+    background-blend-mode: soft-light;
+    margin-left: -20px; // 整体向左移动10px
+    &.report-tag-triangle-red {
+        background-color: #f5576c;
+        &::after {
+            border-left: 10px solid #f5576c;
+        }
+    }
+    span {
+        font-size: 18px;
+    }
+
+    &.report-tag-triangle-yellow {
+        background-color: @color-lucency-yellow;
+
+        &::after {
+            border-left: 10px solid @color-lucency-yellow;
+        }
+    }
+
+    &.report-tag-triangle-blue {
+        background-color: @color-lucency-blue;
+
+        &::after {
+            border-left: 10px solid @color-lucency-blue;
+        }
+    }
+
+    &.report-tag-triangle-green {
+        background-color: @color-lucency-green;
+
+        &::after {
+            border-left: 10px solid @color-lucency-green;
+        }
+    }
+
+    &.report-tag-triangle-pink {
+        background-color: @color-lucency-pink;
+
+        &::after {
+            border-left: 10px solid @color-lucency-pink;
+        }
+    }
+
+    &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 4px;
+        height: 100%;
+        background: #0288d1;
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 0;
+        border-top: 20px solid transparent;
+        border-bottom: 21px solid transparent;
+        background-color: white;
+    }
+}
+
+// 悬浮标签
+.report-tag-suspension-red,
+.report-tag-suspension-pink,
+.report-tag-suspension-blue,
+.report-tag-suspension-orange,
+.report-tag-suspension-green {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    margin-left: -20px;
+    text-align: center;
+    line-height: 35px;
+    font-size: 16px;
+    position: relative;
+    height: 35px;
+    width: 110px;
+    border-radius: 5px 5px 5px 1px;
+    color: #fff;
+    margin-bottom: 20px;
+    background-blend-mode: soft-light;
+
+    
+
+    &.report-tag-suspension-red {
+        background: linear-gradient(to right bottom, rgba(255, 255, 255, 0.4), transparent) var(--bg, #EA3447);
+    }
+    &.report-tag-suspension-pink {
+        background: linear-gradient(to right bottom, rgba(255, 255, 255, 0.4), transparent) var(--bg, @color-lucency-pink);
+    }
+    &.report-tag-suspension-blue {
+        background: linear-gradient(to right bottom, rgba(255, 255, 255, 0.4), transparent) var(--bg, @color-lucency-blue);
+    }
+    &.report-tag-suspension-orange {
+        background: linear-gradient(to right bottom, rgba(255, 255, 255, 0.4), transparent) var(--bg, #c45f24);
+    }
+    &.report-tag-suspension-green {
+        background: linear-gradient(to right bottom, rgba(255, 255, 255, 0.4), transparent) var(--bg, #7db17d);
+    }
+    &:before {
+        content: '';
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        left: 0;
+        bottom: -10px;
+        background-color: inherit;
+        filter: brightness(.7);
+        clip-path: polygon(0 0, 100% 0, 100% 100%);
+    }
+}

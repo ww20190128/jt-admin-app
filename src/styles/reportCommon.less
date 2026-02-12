@@ -1,0 +1,146 @@
+//==颜色定义================================
+// 渐变色
+@linear-gradient-blue: linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%);
+@color-pink: #ff96dc; // 粉色
+@color-red: #e44848; // 红色
+
+.color-pink {
+    color: @color-pink !important;
+}
+
+@color-green: #8fd3f4; // 青色
+
+@color-blue: @theme-color; // 蓝色
+
+.color-green {
+    color: @color-green !important;
+}
+
+// 蓝色
+.color-blue {
+    color: @color-blue !important;
+}
+
+// 红色
+.color-red {
+    color: @color-red !important;
+}
+
+//==========================================
+
+//==字体大小定义=============================
+// 内容  16px
+// 大标题  20px
+//==========================================
+
+
+
+// 报告中的模块卡片样式
+.report-card {
+    padding: 10px 10px;
+    border-radius: 10px;
+    margin: 20px 10px;
+   box-shadow: 0px 0px 4px #e8e8e8;
+    overflow: hidden;
+    background: #fff;
+
+    &:first-child {
+        margin: 10px 10px 20px 10px;
+    }
+
+    &:last-child {
+        margin: 20px 10px 10px 10px;
+    }
+}
+
+h2 {
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1;
+    color: #000;
+}
+
+
+h3 {
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1;
+    color: #000;
+}
+
+// 大标题的字号
+h4 {
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1;
+    color: #000;
+}
+
+h5 {
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1;
+    color: #000;
+}
+
+h6 {
+    font-size: 17px !important;
+    font-weight: 400;
+    line-height: 1;
+    color: #000;
+}
+
+// 文本居中
+.text-center {
+    text-align: center;
+}
+// 图片宽度100%
+.img-main {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 10px;
+    width: 100%;
+    img {
+        width: 100%;
+        height: auto;
+        border-radius: 10px;
+    }
+}
+// 图片居中
+.img-center {
+    display: block;
+    border-radius: 10px;
+    height: 220px;
+    width: auto;
+    max-width: 100%;
+    text-align: center;
+    img {
+        height: 220px;
+        width: auto;
+        max-width: 100%;
+        border-radius: 10px;
+    }
+}
+// 图片居中
+.img-center-radius {
+    display: block;
+    border-radius: 10px;
+    height: 220px;
+    width: auto;
+    max-width: 100%;
+    text-align: center;
+    border-radius: 50%;
+    img {
+        border-radius: 50%;
+        height: 220px;
+        width: auto;
+        max-width: 100%;
+
+    }
+}
+
+// 报告内容-最普通的样式
+.report-content {
+    .content-font();
+}

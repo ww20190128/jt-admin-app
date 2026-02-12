@@ -1,0 +1,6 @@
+disk
+node_modules
+tmp
+/dist
+.env
+src/config/_config.json

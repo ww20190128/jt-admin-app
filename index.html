@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="pragram" content="no-cache">
+  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0, viewport-fit=cover" />
+  <meta name="description" content="专业心理测评工具，提供心理测评、心理咨询、心理健康知识等服务。">
+  <link rel="stylesheet" href="https://at.alicdn.com/t/font_830376_qzecyukz0s.css">
+  <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+          showProcessingMessages: false, //关闭js加载过程信息
+          messageStyle: "none", //不显示信息
+          tex2jax: {
+            inlineMath: [["$", "$"], ["<formula>", "</formula>"]], //行内公式选择符
+            ignoreClass: "el-table"
+          },
+          "HTML-CSS": {
+            availableFonts: ["STIX", "TeX"], //可选字体
+            showMathMenu: false, //关闭右击菜单显示
+            linebreaks: { automatic: true }, // 自动换行
+          },
+        });
+    </script>
+  <script type="text/javascript"
+    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</head>
+
+<body>
+  <div id="app"></div>
+</body>
+<script>
+  //禁止安卓微信字体大小调整
+  (function () {
+    if (
+      typeof WeixinJSBridge == "object" &&
+      typeof WeixinJSBridge.invoke == "function"
+    ) {
+      handleFontSize();
+    } else {
+      if (document.addEventListener) {
+        document.addEventListener(
+          "WeixinJSBridgeReady",
+          handleFontSize,
+          false
+        );
+      } else if (document.attachEvent) {
+        document.attachEvent("WeixinJSBridgeReady", handleFontSize);
+        document.attachEvent("onWeixinJSBridgeReady", handleFontSize);
+      }
+    }
+    function handleFontSize() {
+      WeixinJSBridge.invoke("setFontSizeCallback", { fontSize: 0 });
+      WeixinJSBridge.on("menu:setfont", function () {
+        WeixinJSBridge.invoke("setFontSizeCallback", { fontSize: 0 });
+      });
+    }
+
+    // 阻止ios safari 双指放大
+    document.addEventListener('gesturestart', function (event) {
+      event.preventDefault();
+    });
+  })();
+
+</script>
+
+</html>
