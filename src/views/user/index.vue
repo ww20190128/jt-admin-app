@@ -1,160 +1,21 @@
 <template>
   <div class="user-wrap">
-    <div class="header" :style="{ backgroundImage: `url(${backgroundImage})` }">
-      <div class="user-img-warp">
-        <img :src="userInfo?.headImgUrl || avatar" class="avatar-img" />
-
-        <div class="text-warp">
-          <template v-if="userInfo?.userName">
-            <p>{{ userInfo?.userName }}</p>
-          </template>
-          <div v-else class="login-text">
-            <van-button
-              round
-              color="#a1c4fd"
-              class="login-button"
-              @click="handleLogin"
-              >点击登录</van-button
-            >
-          </div>
-        </div>
-      </div>
-
-      <div class="vip-info" v-show="vipInfo?.name">
-        <div class="vip-name">
-          {{ vipInfo?.name }}<i class="icon fa fa-diamond"></i>
-        </div>
-        <div class="taps" v-if="vipEffectDay > 0">
-          {{ vipEffectDay }}天后到期
-        </div>
-        <div class="give-info">
-          <p class="left-text">剩余赠送次数</p>
-          <div class="progress">
-            <van-progress
-              :percentage="giveNumPercentage"
-              stroke-width="1px"
-              color="#efaa90"
-              :show-pivot="false"
-            />
-          </div>
-          <p class="right-text">{{ vipInfo?.giveNumLimit }}次</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="content">
-      <div
-        class="card"
-        v-if="funcList.length"
-        :class="{ 'show-vip-tap': vipInfo?.name }"
-      >
-        <div class="head serve-head">我的服务</div>
-        <div class="serve-list">
-          <div
-            @click="handleServeItem(item)"
-            class="item"
-            v-for="item in funcList"
-            :key="item"
-          >
-            <van-image
-              fit="cover"
-              :src="item?.iconImg"
-              :class="{ 'animation-shake': item.name == '分享得佣金' }"
-            >
-            </van-image>
-
-            <div class="text" :style="{ color: item?.color }">
-              {{ item.name }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="report-list">
-        <div class="head">我的报告</div>
-
-        <div class="item" v-for="item in testOrderList" :key="item.id">
-          <div class="left">
-            <van-image fit="cover" :src="item.testPaperInfo?.coverImg">
-            </van-image>
-          </div>
-          <div class="right">
-            <p class="title">{{ item.testPaperInfo?.subhead }}</p>
-            <p class="subhead">{{ item.testPaperInfo?.name }}</p>
-            <div class="bottom-info">
-              <!--  fa fa-user-plus -->
-              <van-icon name="clock-o" />
-              {{
-                item.testCompleteTime
-                  ? $filters.formatDate(item.testCompleteTime)
-                  : ""
-              }}
-            </div>
-            <div class="go-button" @click="handleReport(item)">查看报告</div>
-          </div>
-        </div>
-        <div class="none" v-show="!testOrderList.length">暂无可查看的报告</div>
-      </div>
-    </div>
-
     <CopyRight class="copy-right" />
   </div>
-
-  <BaseDialog v-model:show="resetShow" :showConfirmButton="false">
-    <div class="dialog-content">
-      <div class="title">重测说明</div>
-      <div class="text-content">
-        重测后将生成一份新的报告，不会覆盖您当前的报告。当前订单显示最新报告，下面是重测记录。每个用户可以免费重测三次。
-      </div>
-      <div class="title">重测记录</div>
-
-      <div
-        class="report-item"
-        v-for="(item, index) in resetOrderList"
-        :key="index"
-      >
-        <div class="left">
-          {{ item.create_time }}{{ index === 0 ? "初测" : "重测" }}
-        </div>
-        <div
-          v-if="item.status === 1"
-          class="right"
-          @click="handleCheckReport(item)"
-        >
-          查看报告
-        </div>
-        <div v-else class="right continue" @click="handleContinue(item)">
-          继续测试
-        </div>
-      </div>
-
-      <div class="button" @click="handleResetConfirm">知道了，我要重测</div>
-      <div class="button plain" @click="resetShow = false">不用了</div>
-    </div>
-  </BaseDialog>
-  <LoginDialog v-model:show="loginDialogShow" redirectPage="user"></LoginDialog>
 </template>
 
 <script>
 import { reactive, toRefs, computed, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useStore } from "@/store";
-import { getTestOrderList } from "@/api/user";
 
-import { useScrollBottom } from "@/hooks/useScroll";
 import CopyRight from "@/components/CopyRight";
 import { isObject } from "lodash";
-import qs from "qs";
+
 import { Toast } from "vant";
 
 import BaseDialog from "@/components/BaseDialog";
 import LoginDialog from "@/components/LoginDialog";
-// 服务图标
-import serveVip from "@/assets/images/icon/icon-serve-vip.png";
-import serveGive from "@/assets/images/icon/icon-serve-give.png";
-import serveCoupon from "@/assets/images/icon/icon-serve-coupon.png";
-import serveCollect from "@/assets/images/icon/icon-serve-collect.png";
-import serveBrokerage from "@/assets/images/icon/icon-serve-brokerage1.png";
 
 import bgUserImg from "@/assets/images/bg-mine.jpg";
 import avatar from "@/assets/images/avatar.png";
@@ -162,16 +23,10 @@ import avatar from "@/assets/images/avatar.png";
 import tagVipImg from "@/assets/images/tag-vip.png";
 import tagReportImg from "@/assets/images/tag-report.png";
 
-import vipBg from "@/assets/images/vip-banner.jpg";
-// api 接口
-import { resetOrderList, createResetPaper } from "@/api/reportbak";
-
 export default {
   name: "user",
   components: {
     CopyRight,
-    BaseDialog,
-    LoginDialog,
   },
   setup() {
     const store = useStore();
@@ -192,267 +47,14 @@ export default {
       resetOrderList: [], // 重测订单列表
       vipInfo: {},
     });
-    onMounted(async () => {
-      if (store.getters.token) {
-        init();
-        store.dispatch("user/getUserInfo");
-      } else {
-        const { code } = route.query;
-        if (code) {
-          try {
-            await store.dispatch("user/login", { code });
-            // 登录完毕清除微信回调过来的code和state
-            window.history.replaceState(
-              null,
-              null,
-              `${window.location.origin}/user`
-            );
-            // 执行授权页的获取数据钩子
-            init();
-          } catch (error) {
-         
-            // 登录失败 回退上一页
-            Toast("登录失败，请重新登录user/login");
-            // setTimeout(() => {
-            //   router.go(-1);
-            // }, 1000);
-          }
-          // 登录完成 没有用户信息  获取用户信息
-          if (!store.getters.hasUserInfo && store.getters.token) {
-            store.dispatch("user/getUserInfo");
-          }
-        } else {
-          state.loginDialogShow = true;
-        }
-      }
-    });
-    const userInfo = computed(() => store.getters.userInfo);
     const config = computed(() => store.getters.config);
     const backgroundImage = computed(
       () => config?.value?.userBgImg || bgUserImg
     );
-    const giveNumPercentage = computed(() => {
-      if (!state.vipInfo?.name) return 0;
-      const vip = state.vipInfo;
-      const value =
-        ((vip.vipGiveLimit - vip.vipGiveNum) / vip.vipGiveLimit) * 100;
-      return value >= 100 ? 100 : value;
-    });
-    const vipEffectDay = computed(() => {
-      if (!state.vipInfo?.name) return 0;
-      const currentTime = Date.now() / 1000; // 获取当前时间戳（秒）
-      const value = (state.vipInfo.effectEndTime - currentTime) / 86400;
-      return Math.ceil(value); // 向上取整
-    });
 
-    const funcList = computed(() => {
-      return [
-        // {
-        //   iconImg: serveVip,
-        //   name: "会员中心",
-        //   goto: "/vipCenter",
-        // },
-        {
-          iconImg: serveCoupon,
-          name: "我的优惠券",
-          goto: "/coupon",
-        },
-
-        {
-          iconImg: serveGive,
-          name: "我的赠送",
-          goto: "/giveManage",
-        },
-        {
-          iconImg: serveCollect,
-          name: "我的收藏",
-          goto: "/collect",
-        },
-        {
-          iconImg: serveBrokerage,
-          name: "分享得佣金",
-          goto: "/brokerage",
-        },
-      ];
-    });
-
-    function handleReport(item) {
-      if (item.status === 99) {
-        return Toast("该订单已退款，无法查看报告");
-      }
-      router.push({
-        path: "/report",
-        query: {
-          testOrderId: item.id,
-          testPaperId: item.testPaperId,
-        },
-      });
-    }
-
-    // 继续答题
-    async function handleContinue(item) {
-      state.testOrderId = item.id;
-      state.testPaperId = item.testPaperId;
-      try {
-        goExam();
-      } catch (error) {
-        const message = error.message ?? error;
-        Toast(message);
-      }
-    }
-
-    // 重测
-    async function handleReset({ id, testPaperInfo }) {
-      state.testOrderId = id;
-      state.testPaperId = testPaperInfo?.id;
-      const { data } = await resetOrderList({ testOrderId: id });
-      state.resetOrderList = data;
-      state.resetShow = true;
-    }
-    // 获取订单数据
-    async function init() {
-      if (state.nomore) {
-        return;
-      }
-      const { list, vipInfo } = await getTestOrderList(state.query);
-      state.vipInfo = vipInfo;
-      // console.log('%c [ data ]-360', 'font-size:13px; background:pink; color:#bf2c9f;', data)
-      if (!list.length) {
-        state.nomore = true;
-        return;
-      }
-      state.testOrderList = [...state.testOrderList, ...list];
-    }
-    // 查看报告
-    async function handleCheckReport(item) {
-      router.push({
-        path: "/report",
-        query: {
-          testOrderId: item.id,
-          testPaperId: state.testPaperId,
-        },
-      });
-    }
-    // 确认重测
-    async function handleResetConfirm() {
-      try {
-        const {
-          data: { testOrderId },
-        } = await createResetPaper({
-          testOrderId: state.testOrderId,
-        });
-        state.testOrderId = testOrderId;
-        goExam();
-      } catch (error) {
-        const message = error.message ?? error;
-        Toast(message);
-      }
-    }
-
-    //滚动事件
-    useScrollBottom(() => {
-      if (state.nomore) {
-        return;
-      }
-      state.query.pageNum++;
-      init();
-    }, 100);
-    // 登录
-    function handleLogin() {
-      if (store.getters.token) {
-        return;
-      }
-      store.dispatch("user/auth", {
-        authType: 2,
-        redirectUrl: `${window.location.origin}/user`,
-      });
-    }
-    function handleServeItem({ goto }) {
-      const reg = new RegExp("[a-zA-z]+://[^s]*");
-      if (reg.test(goto)) {
-        location.href = goto;
-      } else {
-        router.push(goto);
-      }
-    }
-    // 跳转做题页
-    function goExam() {
-      // console.log('%c [  ]-394', 'font-size:13px; background:pink; color:#bf2c9f;', )
-      router.push({
-        path: "/exam",
-        query: {
-          testOrderId: state.testOrderId,
-          testPaperId: state.testPaperId,
-          type: "reset",
-        },
-      });
-    }
-    function pushBaseUrl(data) {
-      // 获取当前页面域名
-      const url = window.location.origin + "/";
-
-      const baseUrl = url?.endsWith("/") ? url.slice(0, -1) : baseUrl;
-      let path = isObject(data) ? data.path : data;
-      if (url) {
-        path = baseUrl + path;
-        if (isObject(data) && data.query) {
-          const search = qs.stringify(data.query);
-          path = `${path}?${search}`;
-        }
-        window.location.href = path;
-      } else {
-        router.push(path);
-      }
-    }
-    async function handleGoErrorRecord({ testOrderId }) {
-      pushBaseUrl({
-        path: "/errorRecord",
-        query: { testOrderId },
-      });
-    }
-    function handleContinue2({ testOrderId, testPaperId }) {
-      console.log(
-        "%c [ goodsOrder ]-340",
-        "font-size:13px; background:pink; color:#bf2c9f;",
-        testOrderId
-      );
-      if (testOrderId) {
-        router.push({
-          path: "/report",
-          query: {
-            testOrderId,
-            testPaperId: testPaperId,
-          },
-        });
-      } else {
-        router.push({
-          path: "/exam",
-          query: {
-            testPaperId,
-            // testOrderId: state.paper_order_sn2,
-          },
-        });
-      }
-    }
     return {
       ...toRefs(state),
-      userInfo,
-      funcList,
-      handleContinue,
-      handleReport,
       backgroundImage,
-      giveNumPercentage,
-      vipEffectDay,
-      avatar,
-      tagVipImg,
-      tagReportImg,
-      handleLogin,
-      handleServeItem,
-      handleGoErrorRecord,
-      handleContinue2,
-      handleReset,
-      handleResetConfirm,
-      handleCheckReport,
     };
   },
 };
