@@ -41,8 +41,9 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   (response) => {
     const code = response.data.code; // 请求状态码
-    const responseData = response.data.data; // 获取的数据
+    const responseData = response.data; // 获取的数据
     window.loading?.clear?.();
+
     if (code !== 200) {
       // 请求异常
       if (code === 2) {
@@ -95,6 +96,7 @@ service.interceptors.response.use(
       }
       return Promise.reject(responseData || "网络错误，请重试~");
     } else {
+     
       // 请求正常，返回数据
       return responseData;
     }

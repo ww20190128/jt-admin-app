@@ -1,93 +1,22 @@
 <template>
   <div class="content">
-    <SearchNavBar v-model:value="keywords" @onSearch="onNavSearch" />
     <div class="page-content">
-      <!-- 轮播图 -->
-      <Swipe :data="bannerList" v-if="bannerList && bannerList.length > 0" />
-      <!-- 导航区 -->
-      <!-- <Navigation :data="classifyList" /> -->
-      <HeaderTitle
-        title="用户管理"
-        :iconImg="boutiqueIcon"
-        v-if="choicenessList && choicenessList.length > 0"
-      >
-        <!-- <template #right>
-          <span class="title-desc">高质量，精选内容</span>
-        </template> -->
-      </HeaderTitle>
-      <!-- 左右滑动 -->
-      <SlideCardList
-        :data="choicenessList"
-        v-if="choicenessList && choicenessList.length > 0"
-        @clickItem="handleDetailItem"
-      />
-
-      <HeaderTitle title="限时免费" v-if="freeList && freeList.length > 0">
-        <template #right>
-          <span class="title-desc">测一测，快乐一整天</span>
-        </template>
-      </HeaderTitle>
-      <!-- 左右滑动 -->
-      <SelectCardList
-        :leftData="freeList[0]"
-        :rightData="freeList[1]"
-        v-if="freeList && freeList.length > 0"
-        @clickItem="handleDetailItem"
-      />
-      <HeaderTitle
-        title="热门爆款"
-        :iconImg="hotIcon"
-        v-if="hotList && hotList.length > 0"
-      >
-        <!-- <template #right>
-          <span class="title-desc">测一测，快乐一整天</span>
-        </template> -->
-      </HeaderTitle>
-      <CellList
-        :data="hotList"
-        @clickItem="handleDetailItem"
-        v-if="hotList && hotList.length > 0"
-      />
-
-      <HeaderTitle
-        title="新品上线"
-        :iconImg="newIcon"
-        v-if="newList && newList.length > 0"
-      >
-        <template #right>
-          <span class="title-desc">时下流行</span>
-        </template>
-      </HeaderTitle>
-      <!-- 卡片列表 -->
-      <CardList
-        :data="newList"
-        @clickItem="handleDetailItem"
-        :tagImg="newTagImg"
-        v-if="newList && newList.length > 0"
-      />
-      <ShadowButton
-        @click="handleToggleHotList"
-        v-if="newTotalNum && newTotalNum > 0"
-      >
-        换一批
-      </ShadowButton>
-
       <HeaderTitle
         plain
-        title="用户推荐"
+        title="商户列表"
         :iconImg="recommendIcon"
-        v-if="userRecommendList && userRecommendList.length > 0"
+        v-if="list && list.length > 0"
       >
         <template #right>
           <span @click="handleAll" class="pointer title-desc"
-            >查看全部测评
+            >查看全部商户
           </span>
         </template>
       </HeaderTitle>
       <CellCardList
-        :data="userRecommendList"
+        :data="list"
         @clickItem="handleDetailItem"
-        v-if="userRecommendList && userRecommendList.length > 0"
+        v-if="list && list.length > 0"
       />
       <!-- <ShadowButton @click="handleAll">
         查看全部测评
@@ -112,7 +41,7 @@ import CardList from "./components/CardList";
 import ShadowButton from "./components/ShadowButton";
 import CellList from "./components/CellList";
 import SelectCardList from "@/components/SelectCardList";
-import { getHomeData, getListByClassify } from "@/api/app";
+import { getAgentTopupList } from "@/api/admin.js";
 
 // 图标
 import boutiqueIcon from "@/assets/images/icon-boutique.png";
@@ -123,10 +52,8 @@ import newTagImg from "@/assets/images/tag-new.png";
 
 import { loadingToast } from "@/plugins/vant";
 
-import { shareWx } from "@/hooks/shareWx";
-
 export default {
-  name: "home",
+  name: "agent",
   components: {
     SearchNavBar,
     Swipe,
@@ -143,25 +70,17 @@ export default {
   setup() {
     const router = useRouter();
     const state = reactive({
-      keywords: "", // 搜索输入框值
-      bannerList: [], // 首页轮播图数据
-      classifyList: [], // 首页分类数据
-      hotList: [],
-      newList: [],
-      choicenessList: [],
-      userRecommendList: [],
-      freeList: [],
-      newTotalNum: 0,
+      list: [], // 登录列表
+      count: 0, // 总数
       query: {
-        pageNum: 1, // 当前页
-        pageLimit: 4, // 每页数量
+        pageIndex: 1, // 当前页
+        pageSize: 4, // 每页数量
         classifyId: 103, // 热卖火爆
       },
       maxPageNum: 1, // 最大页码数
     });
     onMounted(() => {
       init();
-      shareWx({}, "app");
     });
 
     // 跳转搜索页
@@ -176,15 +95,17 @@ export default {
     // 初始化首页数据
     async function init() {
       try {
-        const { bannerList, classifyList, testPaperList } = await getHomeData();
-        state.bannerList = bannerList; // 首页轮播图
-        state.classifyList = classifyList; // 分类列表
-        state.choicenessList = testPaperList.choicenessList; // 精选推荐
-        state.freeList = testPaperList.freeList; // 限时免费
-        state.userRecommendList = testPaperList.userRecommendList; // 用户推荐
-        state.hotList = testPaperList.hotList;
-        state.newList = testPaperList.newList;
-        state.newTotalNum = testPaperList.newTotalNum;
+        const { data } = await getAgentTopupList({
+          pageIndex: 1,
+          pageSize: 4,
+          status: 1,
+        });
+        state.list = data.list;
+        state.count = data.count;
+        console.log(data);
+        return;
+
+        state.newTotalNum = data.totalNum;
 
         // 初始化热卖火爆最大页码数
         state.maxPageNum = Math.ceil(
@@ -242,7 +163,6 @@ export default {
 <style lang="less" scoped>
 .page-content {
   padding: 60px @padding-base 0 @padding-base;
-
   .title-desc {
     font-size: 13px !important;
     position: relative;

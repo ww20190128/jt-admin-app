@@ -20,9 +20,6 @@
         <p>{{ item.name }}</p>
       </van-tabbar-item>
     </van-tabbar>
-    <!-- <div class="mindfulness-warper" v-if="gbPlayerState.currentItem" @click="gbPlayerState.show = true">
-      <img :src="gbPlayerState.currentItem.cover" :class="gbPlayerState?.state == 'playing' && 'playing'" alt="icon" />
-    </div> -->
   </div>
 </template>
 
@@ -37,7 +34,6 @@ import mineOnImg from "@/assets/images/icon/icon-mine-on.png";
 import mineOffImg from "@/assets/images/icon/icon-mine-off.png";
 import mindfulnessOnImg from "@/assets/images/icon/icon-mindfulness-on.png";
 import mindfulnessOffImg from "@/assets/images/icon/icon-mindfulness-off.png";
-import { inject } from "vue";
 
 export default {
   name: "TabBar",
@@ -60,31 +56,22 @@ export default {
   },
 
   setup() {
-    let gbPlayer = inject("gbPlayer");
-    let gbPlayerState = inject("gbPlayerState");
-
     const tabBarList = [
       {
-        name: "产品",
-        to: "/home",
-        iconOn: homeOnImg,
-        iconOff: homeOffImg,
-      },
-      {
         name: "用户",
-        to: "/classify",
-        iconOn: classifyOnImg,
-        iconOff: classifyOffImg,
+        to: "/user",
+        iconOn: vipOnImg,
+        iconOff: vipOffImg,
       },
       {
         name: "代理",
-        to: "/classify",
+        to: "/agent",
         iconOn: classifyOnImg,
         iconOff: classifyOffImg,
       },
       {
-        name: "个人中心",
-        to: "/user",
+        name: "我的",
+        to: "/mine",
         iconOn: mineOnImg,
         iconOff: mineOffImg,
       },
@@ -102,8 +89,6 @@ export default {
       mineOffImg,
       mindfulnessOnImg,
       mindfulnessOffImg,
-      gbPlayer,
-      gbPlayerState,
     };
   },
 };

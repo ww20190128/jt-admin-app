@@ -1,14 +1,5 @@
 <template>
   <router-view></router-view>
-  <Transition>
-    <div
-      class="player_pop"
-      v-show="gbPlayerState.show"
-      @click="gbPlayerState.show = false"
-    >
-      <player @click.stop />
-    </div>
-  </Transition>
 </template>
 <script>
 import { onMounted, nextTick, useCssVars, inject } from "vue";
@@ -19,15 +10,11 @@ import redPacketBlin from "@/assets/images/red-packet-blin.png";
 import redPacketPc from "@/assets/images/redpacket-pc.png";
 // import { useWindowSize } from "@vueuse/core";
 import { useRoute } from "vue-router";
-import player from "./components/AudioPlayer/player.vue";
 
 export default {
   name: "App",
-  components: {
-    player,
-  },
+  components: {},
   setup() {
-    let gbPlayerState = inject("gbPlayerState");
     const state = {
       count: 0,
       imgs: [redPacket, redPacketBlin, redPacketPc],
@@ -69,20 +56,10 @@ export default {
     // 	async () => {}
     // );
 
-    return { gbPlayerState };
+    return {};
   },
 };
 </script>
 
 <style lang="less" scoped>
-.player_pop {
-  width: 100%;
-  height: 100%;
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  z-index: 999;
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(5px);
-}
 </style>

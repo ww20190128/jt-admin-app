@@ -30,22 +30,24 @@
 <script>
 import { reactive, toRefs, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
+import { useStore } from "@/store";
 
 import { Toast } from "vant";
 import logoImg from "@/assets/images/avatar.png";
-import { userLogin } from "@/api/admin.js";
+import { userLogin, getUserInfo } from "@/api/admin.js";
 import PassWordUtils from "@/utils/passWordUtils.js";
 
 export default {
   name: "login",
   setup() {
+    const store = useStore();
     const router = useRouter();
     const route = useRoute();
     const state = reactive({
       isLoading: false,
       ruleForm: {
-        userName: '13400000003',
-        password: '111222A#',
+        userName: "13400000003",
+        password: "111222A#",
       },
       rules: {
         userName: [{ required: true, message: "请输入账号", trigger: "blur" }],
@@ -66,10 +68,23 @@ export default {
       const password = await PassWordUtils.BrowserEncrypt(
         state.ruleForm.password.trim()
       );
-      const { data } = await userLogin({
+      const { token, expire, currentAuthority } = await userLogin({
         username: state.ruleForm.userName.trim(),
         password: password,
       });
+      // 保存登录的token和权限信息
+      await store.dispatch("user/setUserToken", {
+        token,
+        expire,
+        currentAuthority,
+      });
+      store.dispatch("user/setUserToken", {
+        token,
+        expire,
+        currentAuthority,
+      });
+      // 跳转到首页
+      router.push(route.query.redirect || "/home");
     }
     return {
       ...toRefs(state),

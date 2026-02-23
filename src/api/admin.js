@@ -6,6 +6,24 @@ export function userLogin(params) {
   return request({
     url: "/login",
     method: "post",
-    params,
+    data: params,
+  });
+}
+
+// 获取用户信息
+export function getUserInfo(params) {
+  return request({
+    url: "/getinfo",
+    method: "get",
+    data: params,
+  });
+}
+
+// 获取代理列表
+export function getAgentTopupList(params) {
+  return request({
+    url: "/agent/topuplist",
+    method: "get",
+    params: params,
   });
 }
