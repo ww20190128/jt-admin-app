@@ -75,16 +75,16 @@ export const routes = [
           title: "个人中心",
           showTabBar: true,
         },
-        beforeEnter: async (to, from, next) => {
-          const { code } = to.query;
-          // 微信环境下做跳转拦截
-          if (isWeChat) {
-            next();
-          } else {
-            store.commit("app/SET_WECHATQRSHOW", true);
-            next(from.fullPath);
-          }
-        },
+        // beforeEnter: async (to, from, next) => {
+        //   const { code } = to.query;
+        //   // 微信环境下做跳转拦截
+        //   if (isWeChat) {
+        //     next();
+        //   } else {
+        //     store.commit("app/SET_WECHATQRSHOW", true);
+        //     next(from.fullPath);
+        //   }
+        // },
       },
       {
         path: "/login",

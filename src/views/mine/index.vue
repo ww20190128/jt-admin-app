@@ -2,7 +2,7 @@
   <div class="user-wrap">
     <div class="header" :style="{ backgroundImage: `url(${backgroundImage})` }">
       <div class="user-img-warp">
-        <img :src="userInfo?.headImgUrl || avatar" class="avatar-img" />
+        <img :src="userInfo?.avatar || avatar" class="avatar-img" />
 
         <div class="text-warp">
           <template v-if="userInfo?.userName">
@@ -17,27 +17,6 @@
               >点击登录</van-button
             >
           </div>
-        </div>
-      </div>
-
-      <div class="vip-info" v-show="vipInfo?.name">
-        <div class="vip-name">
-          {{ vipInfo?.name }}<i class="icon fa fa-diamond"></i>
-        </div>
-        <div class="taps" v-if="vipEffectDay > 0">
-          {{ vipEffectDay }}天后到期
-        </div>
-        <div class="give-info">
-          <p class="left-text">剩余赠送次数</p>
-          <div class="progress">
-            <van-progress
-              :percentage="giveNumPercentage"
-              stroke-width="1px"
-              color="#efaa90"
-              :show-pivot="false"
-            />
-          </div>
-          <p class="right-text">{{ vipInfo?.giveNumLimit }}次</p>
         </div>
       </div>
     </div>
@@ -71,7 +50,7 @@
       </div>
 
       <div class="report-list">
-        <div class="head">我的报告</div>
+        <div class="head">我的订单</div>
 
         <div class="item" v-for="item in testOrderList" :key="item.id">
           <div class="left">
@@ -99,40 +78,6 @@
 
     <CopyRight class="copy-right" />
   </div>
-
-  <BaseDialog v-model:show="resetShow" :showConfirmButton="false">
-    <div class="dialog-content">
-      <div class="title">重测说明</div>
-      <div class="text-content">
-        重测后将生成一份新的报告，不会覆盖您当前的报告。当前订单显示最新报告，下面是重测记录。每个用户可以免费重测三次。
-      </div>
-      <div class="title">重测记录</div>
-
-      <div
-        class="report-item"
-        v-for="(item, index) in resetOrderList"
-        :key="index"
-      >
-        <div class="left">
-          {{ item.create_time }}{{ index === 0 ? "初测" : "重测" }}
-        </div>
-        <div
-          v-if="item.status === 1"
-          class="right"
-          @click="handleCheckReport(item)"
-        >
-          查看报告
-        </div>
-        <div v-else class="right continue" @click="handleContinue(item)">
-          继续测试
-        </div>
-      </div>
-
-      <div class="button" @click="handleResetConfirm">知道了，我要重测</div>
-      <div class="button plain" @click="resetShow = false">不用了</div>
-    </div>
-  </BaseDialog>
-  <!-- <LoginDialog v-model:show="loginDialogShow" redirectPage="user"></LoginDialog> -->
 </template>
 
 <script>
@@ -161,7 +106,6 @@ import avatar from "@/assets/images/avatar.png";
 
 import tagVipImg from "@/assets/images/tag-vip.png";
 import tagReportImg from "@/assets/images/tag-report.png";
-
 
 // api 接口
 import { resetOrderList, createResetPaper } from "@/api/reportbak";
@@ -194,11 +138,11 @@ export default {
     });
     onMounted(async () => {
       console.log("xxxxxxxxxxxxxxxx");
-      return
-      
+      return;
+
       if (store.getters.token) {
         console.log("xxxxxxxxxxxx");
-        
+
         init();
         store.dispatch("user/getUserInfo");
       } else {
@@ -231,6 +175,9 @@ export default {
       }
     });
     const userInfo = computed(() => store.getters.userInfo);
+
+    console.log("userInfo:", userInfo.value);
+    
     const config = computed(() => store.getters.config);
     const backgroundImage = computed(
       () => config?.value?.userBgImg || bgUserImg
@@ -373,6 +320,8 @@ export default {
     }
     function handleServeItem({ goto }) {
       const reg = new RegExp("[a-zA-z]+://[^s]*");
+
+      return false;
       if (reg.test(goto)) {
         location.href = goto;
       } else {
