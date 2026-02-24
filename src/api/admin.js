@@ -27,3 +27,12 @@ export function getAgentTopupList(params) {
     params: params,
   });
 }
+
+// 获取用户列表
+export function getMembersList(params) {
+  return request({
+    url: "/members/list",
+    method: "get",
+    params: params,
+  });
+}

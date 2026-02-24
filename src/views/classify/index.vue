@@ -77,8 +77,9 @@ export default {
       nomore: false,
       loading: false,
       keywords: "",
+
       query: {
-        classifyId: 0,
+         classifyId: 0,
         pageLimit: 10,
         pageNum: 1,
         testPaperName: "",

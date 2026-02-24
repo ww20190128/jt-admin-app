@@ -66,7 +66,24 @@ export const routes = [
           showTabBar: true,
         },
       },
-
+      {
+        path: "/account",
+        name: "account",
+        component: () => import("@/views/account/index"),
+        meta: {
+          title: "账号",
+          showTabBar: true,
+        },
+      },
+      {
+        path: "/account/info",
+        name: "account-info",
+        component: () => import("@/views/account/info"),
+        meta: {
+          title: "账号详情",
+          showTabBar: false,
+        },
+      },
       {
         path: "/mine",
         name: "mine",
@@ -75,16 +92,6 @@ export const routes = [
           title: "个人中心",
           showTabBar: true,
         },
-        // beforeEnter: async (to, from, next) => {
-        //   const { code } = to.query;
-        //   // 微信环境下做跳转拦截
-        //   if (isWeChat) {
-        //     next();
-        //   } else {
-        //     store.commit("app/SET_WECHATQRSHOW", true);
-        //     next(from.fullPath);
-        //   }
-        // },
       },
       {
         path: "/login",

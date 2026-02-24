@@ -9,7 +9,7 @@
 			<!-- -->
 			<div class="attention-button animation-button" @click="handleAttention"><span>关注领福利~</span></div>
 		</view>
-		<view class="right">
+		<view class="right" v-if="false">
 			<div @click="onSearch" class="search">
 				<i class="icon fa fa-search"></i>
 			</div>

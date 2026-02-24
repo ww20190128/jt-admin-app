@@ -59,7 +59,7 @@ export default {
     const tabBarList = [
       {
         name: "用户",
-        to: "/user",
+        to: "/account",
         iconOn: vipOnImg,
         iconOff: vipOffImg,
       },

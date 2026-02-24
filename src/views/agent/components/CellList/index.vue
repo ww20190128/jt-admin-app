@@ -29,7 +29,7 @@
               </div>
               <div class="field-item">
                 <div class="field-name">账号</div>
-                <div class="field-value">{{ item.Agent.amount }}个</div>
+                <div class="field-value">{{ item.Agent.expNum }}个</div>
               </div>
             </div>
           </div>
