@@ -85,6 +85,15 @@ export const routes = [
         },
       },
       {
+        path: "/account/create",
+        name: "account-create",
+        component: () => import("@/views/account/create"),
+        meta: {
+          title: "新增账号",
+          showTabBar: false,
+        },
+      },
+      {
         path: "/mine",
         name: "mine",
         component: () => import("@/views/mine/index"),

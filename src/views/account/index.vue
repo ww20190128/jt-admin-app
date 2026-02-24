@@ -211,12 +211,16 @@ export default {
       onSearch();
       setSearch(current.id);
     }
-
-    function handleItem({ id }) {
+    // 跳转到详情
+    function handleItem(item) {
+      window.localStorage.setItem(
+        "account_info_" + item.id,
+        JSON.stringify(item)
+      );
       router.push({
         path: "/account/info",
         query: {
-          id: id,
+          id: item.id,
         },
       });
     }

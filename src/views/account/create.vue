@@ -1,28 +1,31 @@
 <template>
-  <div class="account_info-wrap">
+  <div class="account_create-wrap">
     <!-- 1. 用户详情区 -->
     <div class="section user-info-section" v-if="accountInfo">
-      <h3 class="section-title">用户详情</h3>
+      <h3 class="section-title">新增用户</h3>
       <div class="account-info-wrap">
         <div class="form-row">
           <label>姓名</label>
-          <div class="value-wrap">
-            <span>{{ accountInfo.username }}</span>
-            <span class="edit-arrow">></span>
-          </div>
+          <input
+            type="text"
+            v-model="accountInfo.name"
+            placeholder="请输入姓名"
+          />
         </div>
         <div class="form-row">
           <label>手机号</label>
-          <div class="value-wrap">
-            <span>{{ accountInfo.account }}</span>
-          </div>
+          <input
+            type="text"
+            v-model="accountInfo.phone"
+            placeholder="请输入手机号"
+          />
         </div>
         <div class="form-row">
           <label>性别</label>
-          <div class="value-wrap">
-            <span>{{ accountInfo.sex == "1" ? "男" : "女" }}</span>
-            <span class="edit-arrow">></span>
-          </div>
+          <select v-model="accountInfo.gender">
+            <option value="男">男</option>
+            <option value="女">女</option>
+          </select>
         </div>
         <div class="form-row">
           <label>年龄</label>
@@ -58,94 +61,6 @@
             <span class="edit-arrow">></span>
           </div>
         </div>
-        
-      </div>
-    </div>
-    
-
-    <!-- 3. 训练方案区 -->
-    <div class="section plan-section">
-      <h3 class="section-title">训练方案</h3>
-      <div class="plan-wrap">
-        <div class="item-list">
-          <div class="item" v-for="item in trainingItems" :key="item.key">
-            <div class="item-left">
-              <van-checkbox v-model="item.checked">{{
-                item.name
-              }}</van-checkbox>
-            </div>
-            <div class="item-right">
-              <span>训练时长(分):</span>
-              <div class="num-ctrl">
-                <button @click="item.duration = Math.max(0, item.duration - 1)">
-                  −
-                </button>
-                <span>{{ item.duration }}</span>
-                <button @click="item.duration += 1">+</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="plan-op-wrap">
-          <div class="form-row">
-            <label>遮挡设置</label>
-            <select v-model="planSettings.occlusion">
-              <option value="双眼">双眼</option>
-              <option value="左眼">左眼</option>
-              <option value="右眼">右眼</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label>集合散开模式</label>
-            <select v-model="planSettings.convergenceMode">
-              <option value="混合模式">混合模式</option>
-              <option value="集合优先">集合优先</option>
-              <option value="散开优先">散开优先</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <label>训练时长(分钟)</label>
-            <div class="num-ctrl">
-              <button
-                @click="
-                  planSettings.totalDuration = Math.max(
-                    0,
-                    planSettings.totalDuration - 1
-                  )
-                "
-              >
-                −
-              </button>
-              <span>{{ planSettings.totalDuration }}</span>
-              <button @click="planSettings.totalDuration += 1">+</button>
-            </div>
-          </div>
-        </div>
-        <div class="btn-group">
-          <button class="btn btn-secondary" @click="handlePlanCancel">
-            取消
-          </button>
-          <button class="btn btn-primary" @click="handlePlanConfirm">
-            确认
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 4. 档案列表区 -->
-    <div class="section archive-section">
-      <h3 class="section-title">档案列表</h3>
-      <div class="archive-wrap">
-        <div
-          class="archive-item"
-          v-for="item in archiveList"
-          :key="item.id"
-          @click="handleJumpToArchive(item.id)"
-        >
-          <span>档案 {{ item.id }}</span>
-          <span class="arrow">→</span>
-        </div>
-        <div v-if="archiveList.length === 0" class="empty-tip">暂无档案</div>
       </div>
     </div>
   </div>
@@ -156,11 +71,9 @@ import { reactive, toRefs, onMounted, inject } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Toast } from "vant";
 import { get } from "lodash";
-// 假设接口
-// import {} from "@/api/admin";
 
 export default {
-  name: "account_info",
+  name: "account_create",
   setup() {
     const router = useRouter();
     const route = useRoute();
@@ -342,7 +255,7 @@ export default {
 </script>
   
 <style lang="less" scoped>
-.account_info-wrap {
+.account_create-wrap {
   max-width: 900px;
   margin: 0 auto;
   padding: 16px;
@@ -381,17 +294,20 @@ export default {
     color: #333;
     font-weight: normal;
   }
-  .value-wrap {
-    flex: 1; /* 占满剩余宽度 */
-    display: flex; /* 内部弹性布局，值和箭头分开 */
-    align-items: center;
-    justify-content: space-between; /* 内容左对齐，箭头右对齐 */
-    min-height: 20px; /* 保证空值时也有高度 */
-    .edit-arrow {
-      color: #ccc;
-      font-size: 16px;
-      margin-left: 15px;
-      cursor: pointer;
+  input,
+  select {
+    flex: 1;
+    min-width: 200px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #333;
+
+    &[readonly] {
+      background-color: #f5f7fa;
+      color: #909399;
     }
   }
   &:hover {
@@ -483,34 +399,6 @@ export default {
       min-width: 30px;
       text-align: center;
     }
-  }
-}
-
-// 档案列表区
-.archive-wrap {
-  .archive-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px;
-    border-bottom: 1px solid #f0f0f0;
-    cursor: pointer;
-    transition: background-color 0.2s;
-
-    &:hover {
-      background-color: #f5f7fa;
-    }
-
-    .arrow {
-      color: #909399;
-      font-size: 16px;
-    }
-  }
-
-  .empty-tip {
-    text-align: center;
-    color: #909399;
-    padding: 20px 0;
   }
 }
 </style>
