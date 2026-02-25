@@ -1,6 +1,11 @@
 <template>
   <router-view v-slot="{ Component, route }">
-    <section ref="container" class="container" id="container" :class="{ 'min-height': !showTabBar }">
+    <section
+      ref="container"
+      class="container"
+      id="container"
+      :class="{ 'min-height': !showTabBar }"
+    >
       <keep-alive :include="cachedViews">
         <component :is="Component" :key="route.fullPath" />
       </keep-alive>
@@ -26,8 +31,6 @@
   </div>
   <!-- 返回顶部 -->
   <BackTop v-if="!backTopHidden" />
-  <!-- 音频播放器缩影 -->
-  <PlayerIcon />
 </template>
 /
 <script>
@@ -35,13 +38,13 @@ import { reactive, toRefs, computed } from "vue";
 import { useRoute, onBeforeRouteUpdate } from "vue-router";
 import CopyRight from "@/components/CopyRight";
 import BackTop from "@/components/BackTop";
-import PlayerIcon from "@/components/AudioPlayer/playerIcon.vue";
+
 import WeChatQr from "@/components/WeChatQr";
 import Error from "@/components/Error";
 import TabBar from "./TabBar";
 import { useAgent } from "@/hooks/useAgent";
 import { useStore } from "@/store";
-import NProgress from "nprogress"
+import NProgress from "nprogress";
 export default {
   name: "Layout",
   components: {
@@ -50,7 +53,6 @@ export default {
     WeChatQr,
     TabBar,
     Error,
-    PlayerIcon,
   },
   setup() {
     const store = useStore();
@@ -67,13 +69,13 @@ export default {
       get: () => store.state.app.error,
       set: (error) => store.commit("app/SET_ERROR", error),
     });
-    // 
+    //
     // 路由更新前拦截处理
     onBeforeRouteUpdate((to, from, next) => {
       if (!isWeChat) {
         if (weChatList.includes(to.path)) {
           store.commit("app/SET_WECHATQRSHOW", true);
-          NProgress.done()
+          NProgress.done();
           return;
         }
         next();
@@ -110,7 +112,7 @@ export default {
 </script>
 <style lang="less" scoped>
 .container {
-  max-width: 750PX !important;
+  max-width: 750px !important;
   width: 100%;
   height: 100%;
   overflow-x: hidden;
@@ -147,5 +149,4 @@ export default {
   overflow: hidden;
   .full-fixed();
 }
-
 </style>

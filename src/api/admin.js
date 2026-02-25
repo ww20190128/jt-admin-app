@@ -36,3 +36,29 @@ export function getMembersList(params) {
     params: params,
   });
 }
+
+// 创建用户
+export function buyvip(params) {
+  return request({
+    url: "/members/buyvip",
+    method: "post",
+    data: params,
+  });
+}
+// 获取方案
+export function getPlan(params) {
+  return request({
+    url: "/plan/" + params.id,
+    method: "get",
+    params: params,
+  });
+}
+
+// 充值审核
+export function topuplist(params) {
+  return request({
+    url: "/agent/topuplist",
+    method: "get",
+    params: params,
+  });
+}

@@ -1,5 +1,10 @@
 <template>
   <div class="account_info-wrap">
+    <div class="head-warper">
+      <div class="left" @click="$router.go(-1)">
+        <img src="@/assets/images/icon/back.png" alt="返回" />
+      </div>
+    </div>
     <!-- 1. 用户详情区 -->
     <div class="section user-info-section" v-if="accountInfo">
       <h3 class="section-title">用户详情</h3>
@@ -58,10 +63,8 @@
             <span class="edit-arrow">></span>
           </div>
         </div>
-        
       </div>
     </div>
-    
 
     <!-- 3. 训练方案区 -->
     <div class="section plan-section">
@@ -149,18 +152,100 @@
       </div>
     </div>
   </div>
+  <BaseDialog v-model:show="showUpdateAccount" :showConfirmButton="false">
+    <div class="dialog-content">
+      <div class="title">修改账号</div>
+      <div class="content">
+        <!-- 姓名 -->
+        <div class="form-row">
+          <label>姓名</label>
+          <input
+            type="text"
+            v-model="accountInfo.username"
+            placeholder="请输入姓名"
+            class="form-input"
+          />
+        </div>
+
+        <!-- 手机号（带格式验证） -->
+        <div class="form-row">
+          <label>手机号</label>
+          <input
+            type="tel"
+            v-model="accountInfo.account"
+            placeholder="请输入手机号"
+            class="form-input"
+            @blur="validatePhone"
+          />
+          <span v-if="phoneError" class="error-tip">{{ phoneError }}</span>
+        </div>
+
+        <!-- 性别（radio方式） -->
+        <div class="form-row">
+          <label>性别</label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input
+                type="radio"
+                v-model="accountInfo.sex"
+                value="0"
+                name="sex"
+              />
+              未知
+            </label>
+            <label class="radio-item">
+              <input
+                type="radio"
+                v-model="accountInfo.sex"
+                value="1"
+                name="sex"
+              />
+              男
+            </label>
+            <label class="radio-item">
+              <input
+                type="radio"
+                v-model="accountInfo.sex"
+                value="2"
+                name="sex"
+              />
+              女
+            </label>
+          </div>
+        </div>
+
+        <!-- 年龄（日期选择器） -->
+        <div class="form-row">
+          <label>出生日期</label>
+          <input
+            type="date"
+            v-model="accountInfo.birthday"
+            class="form-input"
+            placeholder="请选择出生日期"
+          />
+        </div>
+      </div>
+      <div class="botton-wrap">
+        <div class="confirm-botton" @click="handleTopUpConfirm">确定</div>
+        <div class="cancel-botton" @click="showTopUp = false">取消</div>
+      </div>
+    </div>
+  </BaseDialog>
 </template>
-  
-  <script>
+
+<script>
 import { reactive, toRefs, onMounted, inject } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Toast } from "vant";
 import { get } from "lodash";
-// 假设接口
-// import {} from "@/api/admin";
 
+import { getPlan } from "@/api/admin";
+import BaseDialog from "@/components/BaseDialog";
 export default {
   name: "account_info",
+  components: {
+    BaseDialog,
+  },
   setup() {
     const router = useRouter();
     const route = useRoute();
@@ -178,27 +263,7 @@ export default {
         { id: 103, name: "年卡" },
         { id: 104, name: "年卡Plus" },
       ],
-      // 用户详情
-      userInfo: {
-        name: "",
-        phone: "",
-        gender: "男",
-        age: "",
-        cardType: "免费",
-        expireTime: "",
-        agent: "13400000003",
-        status: "正常",
-        password: "",
-      },
-      // 卡操作
-      cardOp: {
-        type: "购买",
-        name: "",
-        phone: "",
-        gender: "",
-        currentCard: "免费",
-        targetCard: "年卡Plus",
-      },
+
       // 训练方案
       trainingItems: [
         { key: "stimulus", name: "刺激训练", checked: false, duration: 10 },
@@ -216,6 +281,7 @@ export default {
       },
       // 档案列表
       archiveList: [],
+      showUpdateAccount: false, // 显示修改账号信息
     });
 
     onMounted(async () => {
@@ -242,31 +308,15 @@ export default {
 
     // 初始化页面数据
     async function init() {
-      try {
-        // 1. 获取用户详情
-        const accountInfo = JSON.parse(
-          window.localStorage.getItem("account_info_" + id)
-        );
-        state.accountInfo = accountInfo;
-        console.log("accountInfo:", accountInfo);
+      // 1. 获取用户详情
+      const accountInfo = JSON.parse(
+        window.localStorage.getItem("account_info_" + id)
+      );
+      state.accountInfo = accountInfo;
+      console.log("accountInfo:", accountInfo);
 
-        // 2. 获取训练方案
-        const planRes = await getTrainingPlan({ userId });
-        if (planRes.data) {
-          // 合并到 trainingItems 和 planSettings
-          state.trainingItems = planRes.data.items || state.trainingItems;
-          state.planSettings = planRes.data.settings || state.planSettings;
-        }
-
-        // 3. 获取档案列表
-        const archiveRes = await getArchiveList({ userId });
-        if (archiveRes.data?.list) {
-          state.archiveList = archiveRes.data.list;
-        }
-      } catch (err) {
-        console.error("初始化失败", err);
-        Toast.fail("页面加载失败");
-      }
+      // 2. 获取训练方案
+      const { data } = await getPlan({ id: id });
     }
 
     // 保存用户信息
@@ -340,14 +390,192 @@ export default {
   },
 };
 </script>
-  
+
 <style lang="less" scoped>
+@padding-base: 16px;
+@primary-color: #2563eb;
+@grey-color: #4e5969;
+@light-grey: #f5f7fa;
+@border-color: #e5e6eb;
+.form-row {
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  position: relative;
+
+  &.last-child {
+    border-bottom: none;
+  }
+
+  label {
+    flex: 0 0 50px;
+    color: #333;
+    font-weight: normal;
+  }
+
+  .form-input {
+    flex: 1;
+    min-width: 120px;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #333;
+
+    &[readonly] {
+      background-color: #f5f7fa;
+      color: #909399;
+    }
+  }
+
+  .form-select {
+    height: 34px;
+    cursor: pointer;
+  }
+
+  &:hover {
+    background-color: #f8f8f8;
+  }
+
+  // 错误提示样式
+  .error-tip {
+    position: absolute;
+    right: 16px;
+    color: #f56c6c;
+    font-size: 12px;
+  }
+
+  // 年龄显示样式
+  .age-text {
+    margin-left: 12px;
+    color: #666;
+    font-size: 14px;
+  }
+}
+
+// 单选框样式
+.radio-group {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  padding: 2px 0;
+  gap: 16px;
+
+  .radio-item {
+    display: flex;
+
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    input[type="radio"] {
+      margin-right: 6px;
+
+      border: none;
+    }
+  }
+}
+.dialog-content {
+  text-align: center;
+  padding: 20px 5px;
+  font-size: 14px;
+  color: #333;
+
+  .title {
+    font-weight: bold;
+    font-size: 18px;
+    color: #1d2129;
+    text-align: center;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  .content {
+    margin-bottom: 32px;
+    .field-item {
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      .name {
+        text-align: left;
+        line-height: 30px;
+        font-size: 14px;
+        color: @grey-color;
+      }
+      .value {
+        font-size: 16px;
+        color: #1d2129;
+      }
+    }
+  }
+
+  .botton-wrap {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+
+    .confirm-botton {
+      flex: 1;
+      height: 44px;
+      line-height: 44px;
+      text-align: center;
+      background-color: @primary-color;
+      color: #ffffff;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+
+      &:active {
+        background-color: #1d4ed8;
+      }
+    }
+
+    .cancel-botton {
+      flex: 1;
+      height: 44px;
+      line-height: 44px;
+      text-align: center;
+      background-color: #dde9fc;
+      color: @grey-color;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+
+      &:active {
+        background-color: @border-color;
+      }
+    }
+  }
+}
 .account_info-wrap {
   max-width: 900px;
   margin: 0 auto;
   padding: 16px;
   background-color: #f5f7fa;
   min-height: 100vh;
+  .head-warper {
+    position: relative;
+    width: 100%;
+    height: 40px;
+    display: flex;
+    padding: 0 10px;
+    justify-content: space-between;
+    align-items: center;
+
+    .left {
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    img {
+      height: 20px;
+    }
+  }
 }
 
 .section {

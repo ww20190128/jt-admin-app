@@ -25,7 +25,7 @@
                   {{ item.Agent.balance }}元
                   <!-- 充值按钮 -->
                 </div>
-                <div class="field-button">充值</div>
+                <div class="field-button" @click="gotoTopUp(item)">充值</div>
               </div>
               <div class="field-item">
                 <div class="field-name">账号</div>
@@ -100,11 +100,22 @@ export default {
         },
       });
     }
+    function gotoTopUp({ Agent }) {
+      router.push({
+        path: "/agent/topUp",
+        query: {
+          id: Agent.id,
+          name: Agent.name,
+        },
+      });
+    }
+
     return {
       first,
       style,
       handleItem,
       logoImg,
+      gotoTopUp,
     };
   },
 };
@@ -166,7 +177,7 @@ export default {
       margin-top: 10px;
       .field-item {
         display: flex;
-        line-height: 25px;
+        line-height: 20px;
         .field-name {
           font-size: 12px;
           color: #64748b;
@@ -179,7 +190,7 @@ export default {
         .field-button {
           margin-left: 5px;
           padding: 0px 2px;
-          background-color: #007bff;
+          background-color: #4a9cf3;
           color: #fff;
           font-size: 12px;
           border-radius: 5px;

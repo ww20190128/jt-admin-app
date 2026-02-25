@@ -4,7 +4,7 @@
     <div class="login-container">
       <div class="logo-img">
         <img :src="logoImg" />
-        <P>欢迎登录睛瞳管理系统 </P>
+        <P class="title">欢迎登录睛瞳管理系统 </P>
       </div>
       <div class="input-group">
         <input
@@ -34,7 +34,7 @@ import { useStore } from "@/store";
 
 import { Toast } from "vant";
 import logoImg from "@/assets/images/avatar.png";
-import { userLogin, getUserInfo } from "@/api/admin.js";
+import { userLogin } from "@/api/admin.js";
 import PassWordUtils from "@/utils/passWordUtils.js";
 
 export default {
@@ -72,19 +72,18 @@ export default {
         username: state.ruleForm.userName.trim(),
         password: password,
       });
+
       // 保存登录的token和权限信息
       await store.dispatch("user/setUserToken", {
         token,
         expire,
         currentAuthority,
       });
-      store.dispatch("user/setUserToken", {
-        token,
-        expire,
-        currentAuthority,
-      });
       // 跳转到首页
-      router.push(route.query.redirect || "/home");
+      router.push({
+        path: "/mine",
+        query: {},
+      });
     }
     return {
       ...toRefs(state),
@@ -120,7 +119,7 @@ export default {
       width: 100px;
       height: 100px;
     }
-    P {
+    .title {
       text-align: center;
       margin-top: 10px;
       font-size: 18px;

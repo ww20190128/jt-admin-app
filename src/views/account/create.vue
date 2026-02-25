@@ -1,76 +1,113 @@
 <template>
   <div class="account_create-wrap">
-    <!-- 1. 用户详情区 -->
-    <div class="section user-info-section" v-if="accountInfo">
+    <div class="head-warper">
+      <div class="left" @click="$router.go(-1)">
+        <img src="@/assets/images/icon/back.png" alt="返回" />
+      </div>
+    </div>
+
+    <!-- 用户详情区 -->
+    <div class="section user-info-section">
       <h3 class="section-title">新增用户</h3>
       <div class="account-info-wrap">
+        <!-- 姓名 -->
         <div class="form-row">
           <label>姓名</label>
           <input
             type="text"
-            v-model="accountInfo.name"
+            v-model="accountInfo.username"
             placeholder="请输入姓名"
+            class="form-input"
           />
         </div>
+
+        <!-- 手机号（带格式验证） -->
         <div class="form-row">
           <label>手机号</label>
           <input
-            type="text"
-            v-model="accountInfo.phone"
+            type="tel"
+            v-model="accountInfo.account"
             placeholder="请输入手机号"
+            class="form-input"
+            @blur="validatePhone"
           />
+          <span v-if="phoneError" class="error-tip">{{ phoneError }}</span>
         </div>
+
+        <!-- 性别（radio方式） -->
         <div class="form-row">
           <label>性别</label>
-          <select v-model="accountInfo.gender">
-            <option value="男">男</option>
-            <option value="女">女</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label>年龄</label>
-          <div class="value-wrap">
-            <span>{{ getAge() }}</span>
-            <span class="edit-arrow">></span>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input
+                type="radio"
+                v-model="accountInfo.sex"
+                value="0"
+                name="sex"
+              />
+              未知
+            </label>
+            <label class="radio-item">
+              <input
+                type="radio"
+                v-model="accountInfo.sex"
+                value="1"
+                name="sex"
+              />
+              男
+            </label>
+            <label class="radio-item">
+              <input
+                type="radio"
+                v-model="accountInfo.sex"
+                value="2"
+                name="sex"
+              />
+              女
+            </label>
           </div>
         </div>
+
+        <!-- 年龄（日期选择器） -->
+        <div class="form-row">
+          <label>出生日期</label>
+          <input
+            type="date"
+            v-model="accountInfo.birthday"
+            class="form-input"
+            placeholder="请选择出生日期"
+          />
+        </div>
+
+        <!-- 当前卡类型 -->
         <div class="form-row">
           <label>当前卡类型</label>
-          <div class="value-wrap">
-            <span>{{ getCurrentCardType() }}</span>
-            <span class="edit-arrow">></span>
-          </div>
+          <select v-model="accountInfo.typeId" class="form-input form-select">
+            <option
+              v-for="value in classifyList"
+              :key="value.id"
+              :value="value.id"
+            >
+              {{ value.name }}
+            </option>
+          </select>
         </div>
-        <div class="form-row">
-          <label>有效期至</label>
-          <div class="value-wrap">
-            <span>{{ accountInfo.expiredAt }}</span>
-          </div>
-        </div>
-        <div class="form-row">
-          <label>状态</label>
-          <div class="value-wrap">
-            <span>{{ accountInfo.status == "1" ? "正常" : "暂停" }}</span>
-            <span class="edit-arrow">></span>
-          </div>
-        </div>
-        <div class="form-row">
-          <label>重置密码</label>
-          <div class="value-wrap">
-            <span></span>
-            <span class="edit-arrow">></span>
-          </div>
-        </div>
+      </div>
+
+      <!-- 操作按钮（优化布局） -->
+      <div class="op-wrap">
+        <button class="op-btn cancel-btn" @click="handleCancel">取消</button>
+        <button class="op-btn confirm-btn" @click="handleCreate">创建</button>
       </div>
     </div>
   </div>
 </template>
-  
-  <script>
-import { reactive, toRefs, onMounted, inject } from "vue";
+
+<script>
+import { reactive, toRefs, onMounted, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Toast } from "vant";
-import { get } from "lodash";
+import { buyvip } from "@/api/admin";
 
 export default {
   name: "account_create",
@@ -78,182 +115,103 @@ export default {
     const router = useRouter();
     const route = useRoute();
 
-    const { id } = route.query;
+    // 响应式数据
     const state = reactive({
-      accountInfo: {},
+      accountInfo: {
+        account: "", // 手机号
+        birthday: "", // 出生日期
+        sex: "0", // 性别，默认未知
+        typeId: "", // 卡类型ID
+        username: "", // 姓名
+      },
       classifyList: [
-        { id: -1, name: "全部" },
-        { id: 0, name: "免费" },
-        { id: 3, name: "七日卡" },
         { id: 99, name: "体验卡" },
         { id: 101, name: "季卡" },
         { id: 102, name: "半年卡" },
         { id: 103, name: "年卡" },
         { id: 104, name: "年卡Plus" },
       ],
-      // 用户详情
-      userInfo: {
-        name: "",
-        phone: "",
-        gender: "男",
-        age: "",
-        cardType: "免费",
-        expireTime: "",
-        agent: "13400000003",
-        status: "正常",
-        password: "",
-      },
-      // 卡操作
-      cardOp: {
-        type: "购买",
-        name: "",
-        phone: "",
-        gender: "",
-        currentCard: "免费",
-        targetCard: "年卡Plus",
-      },
-      // 训练方案
-      trainingItems: [
-        { key: "stimulus", name: "刺激训练", checked: false, duration: 10 },
-        { key: "fine", name: "精细", checked: false, duration: 10 },
-        { key: "suppression", name: "脱抑制", checked: false, duration: 10 },
-        { key: "center", name: "旁中心", checked: false, duration: 10 },
-        { key: "simultaneous", name: "同时视觉", checked: false, duration: 10 },
-        { key: "fusion", name: "双眼融合", checked: false, duration: 10 },
-        { key: "muscle", name: "眼肌", checked: false, duration: 10 },
-      ],
-      planSettings: {
-        occlusion: "双眼",
-        convergenceMode: "混合模式",
-        totalDuration: 120,
-      },
-      // 档案列表
-      archiveList: [],
+      phoneError: "", // 手机号错误提示
     });
 
-    onMounted(async () => {
-      if (!id) {
-        Toast.fail("缺少ID");
+    // 手机号格式验证
+    const validatePhone = () => {
+      const { account } = state.accountInfo;
+      // 清空之前的错误提示
+      state.phoneError = "";
+
+      if (!account) {
+        state.phoneError = "手机号不能为空";
+        return false;
+      }
+
+      // 手机号正则验证（11位数字，以1开头）
+      const phoneReg = /^1[3-9]\d{9}$/;
+      if (!phoneReg.test(account)) {
+        state.phoneError = "请输入正确的手机号格式";
+        return false;
+      }
+      return true;
+    };
+
+    // 根据出生日期计算年龄
+    const calculateAge = () => {
+      if (!state.accountInfo.birthday) return 0;
+      const birthDate = new Date(state.accountInfo.birthday);
+      const now = new Date();
+      let age = now.getFullYear() - birthDate.getFullYear();
+      // 校验月份和日期，未到生日则年龄减1
+      const monthDiff = now.getMonth() - birthDate.getMonth();
+      if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && now.getDate() < birthDate.getDate())
+      ) {
+        age--;
+      }
+      return age < 0 ? 0 : age;
+    };
+
+    // 取消按钮逻辑
+    const handleCancel = () => {
+      router.go(-1);
+    };
+
+    // 创建按钮逻辑（包含表单验证）
+    async function handleCreate() {
+      // 先验证手机号
+      if (!validatePhone()) return;
+
+      // 验证姓名
+      if (!state.accountInfo.username.trim()) {
+        Toast("请输入姓名");
         return;
       }
-      await init();
-    });
 
-    // 计算年龄
-    const getAge = () => {
-      if (!state.accountInfo.birthday) return "";
-      const birthYear = new Date(state.accountInfo.birthday).getFullYear();
-      const currentYear = new Date().getFullYear();
-      return currentYear - birthYear;
-    };
-    // 获取当前卡类型
-    const getCurrentCardType = () => {
-      const cardTypeId = state.accountInfo.typeId;
-      const card = state.classifyList.find((c) => c.id === cardTypeId);
-      return card ? card.name : "未知";
+      // 验证卡类型
+      if (!state.accountInfo.typeId) {
+        Toast("请选择卡类型");
+        return;
+      }
+      state.accountInfo.age = calculateAge();
+      const { data } = await buyvip(state.accountInfo);
+      Toast("创建成功");
+      // 提交成功后返回上一页
+      router.go(-1);
     };
 
-    // 初始化页面数据
-    async function init() {
-      try {
-        // 1. 获取用户详情
-        const accountInfo = JSON.parse(
-          window.localStorage.getItem("account_info_" + id)
-        );
-        state.accountInfo = accountInfo;
-        console.log("accountInfo:", accountInfo);
-
-        // 2. 获取训练方案
-        const planRes = await getTrainingPlan({ userId });
-        if (planRes.data) {
-          // 合并到 trainingItems 和 planSettings
-          state.trainingItems = planRes.data.items || state.trainingItems;
-          state.planSettings = planRes.data.settings || state.planSettings;
-        }
-
-        // 3. 获取档案列表
-        const archiveRes = await getArchiveList({ userId });
-        if (archiveRes.data?.list) {
-          state.archiveList = archiveRes.data.list;
-        }
-      } catch (err) {
-        console.error("初始化失败", err);
-        Toast.fail("页面加载失败");
-      }
-    }
-
-    // 保存用户信息
-    async function handleSaveInfo() {
-      try {
-        await updateUserInfo({ id: userId, ...state.accountInfo });
-        Toast.success("保存成功");
-      } catch (err) {
-        Toast.fail("保存失败");
-      }
-    }
-
-    // 暂停训练
-    function handleTraining() {
-      state.accountInfo.status = "暂停";
-      Toast("已切换为暂停状态");
-    }
-
-    // 卡操作确认
-    async function handleCardOpConfirm() {
-      try {
-        await operateCard({
-          userId,
-          type: state.cardOp.type,
-          targetCard: state.cardOp.targetCard,
-        });
-        Toast.success("卡操作成功");
-        // 刷新用户信息
-        initPageData();
-      } catch (err) {
-        Toast.fail("卡操作失败");
-      }
-    }
-
-    // 训练方案取消
-    function handlePlanCancel() {
-      initPageData(); // 重置为初始数据
-      Toast("已重置方案");
-    }
-
-    // 训练方案确认
-    async function handlePlanConfirm() {
-      try {
-        await saveTrainingPlan({
-          userId,
-          items: state.trainingItems,
-          settings: state.planSettings,
-        });
-        Toast.success("方案保存成功");
-      } catch (err) {
-        Toast.fail("方案保存失败");
-      }
-    }
-
-    // 跳转到档案页面
-    function handleJumpToArchive(archiveId) {
-      router.push({ path: "/archive", query: { id: archiveId, userId } });
-    }
+    onMounted(async () => {});
 
     return {
       ...toRefs(state),
-      handleSaveInfo,
-      handleTraining,
-      handleCardOpConfirm,
-      handlePlanCancel,
-      handlePlanConfirm,
-      handleJumpToArchive,
-      getAge,
-      getCurrentCardType,
+      validatePhone,
+      calculateAge,
+      handleCancel,
+      handleCreate,
     };
   },
 };
 </script>
-  
+
 <style lang="less" scoped>
 .account_create-wrap {
   max-width: 900px;
@@ -261,6 +219,26 @@ export default {
   padding: 16px;
   background-color: #f5f7fa;
   min-height: 100vh;
+  position: relative;
+
+  .head-warper {
+    position: relative;
+    width: 100%;
+    height: 40px;
+    display: flex;
+    padding: 0 10px;
+    justify-content: space-between;
+    align-items: center;
+
+    .left {
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    img {
+      height: 20px;
+    }
+  }
 }
 
 .section {
@@ -286,16 +264,19 @@ export default {
   padding: 15px 16px;
   background-color: #fff;
   border-bottom: 1px solid #f0f0f0;
+  position: relative;
+
   &.last-child {
     border-bottom: none;
   }
+
   label {
     flex: 0 0 100px;
     color: #333;
     font-weight: normal;
   }
-  input,
-  select {
+
+  .form-input {
     flex: 1;
     min-width: 200px;
     height: 32px;
@@ -310,94 +291,87 @@ export default {
       color: #909399;
     }
   }
+
+  .form-select {
+    height: 34px;
+    cursor: pointer;
+  }
+
   &:hover {
     background-color: #f8f8f8;
   }
+
+  // 错误提示样式
+  .error-tip {
+    position: absolute;
+    right: 16px;
+    color: #f56c6c;
+    font-size: 12px;
+  }
+
+  // 年龄显示样式
+  .age-text {
+    margin-left: 12px;
+    color: #666;
+    font-size: 14px;
+  }
 }
 
-.btn-group {
+// 单选框样式
+.radio-group {
   display: flex;
-  gap: 12px;
-  margin-top: 20px;
-  justify-content: flex-end;
-}
+  flex: 1;
+  flex-wrap: wrap;
+  padding: 2px 0;
+  gap: 16px;
 
-.btn {
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-
-  &.primary {
-    background-color: #409eff;
-    color: #fff;
-
-    &:hover {
-      background-color: #66b1ff;
-    }
-  }
-
-  &.secondary {
-    background-color: #909399;
-    color: #fff;
-
-    &:hover {
-      background-color: #a6a9ad;
-    }
-  }
-}
-
-// 训练方案区
-.plan-wrap {
-  .item-list {
-    margin-bottom: 20px;
-
-    .item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #f0f0f0;
-
-      .item-left {
-        flex: 1;
-      }
-
-      .item-right {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        color: #666;
-      }
-    }
-  }
-
-  .num-ctrl {
+  .radio-item {
     display: flex;
-    align-items: center;
-    gap: 8px;
 
-    button {
-      width: 24px;
-      height: 24px;
-      border: 1px solid #dcdfe6;
-      border-radius: 4px;
-      background: #fff;
-      font-size: 14px;
-      cursor: pointer;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    input[type="radio"] {
+      margin-right: 6px;
+
+      border: none;
+    }
+  }
+}
+
+// 操作按钮样式（优化布局）
+.op-wrap {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 0 16px;
+
+  .op-btn {
+    padding: 8px 24px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+
+    &.cancel-btn {
+      background-color: #f5f7fa;
+      color: #666;
+      border: 1px solid #e4e7ed;
 
       &:hover {
-        border-color: #409eff;
-        color: #409eff;
+        background-color: #e4e7ed;
       }
     }
 
-    span {
-      min-width: 30px;
-      text-align: center;
+    &.confirm-btn {
+      background-color: #409eff;
+      color: #fff;
+
+      &:hover {
+        background-color: #66b1ff;
+      }
     }
   }
 }

@@ -49,6 +49,15 @@ export const routes = [
         },
       },
       {
+        path: "/agent/topUp",
+        name: "agent/topUp",
+        component: () => import("@/views/agent/topUp"),
+        meta: {
+          title: "充值",
+          showTabBar: false,
+        },
+      },
+      {
         path: "/agent/info",
         name: "agentInfo",
         component: () => import("@/views/agent/info"),

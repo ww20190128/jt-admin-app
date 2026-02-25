@@ -96,6 +96,8 @@ export default {
 <style lang="less" scoped>
 .tab-warper {
   width: 100%;
+  z-index: 999;
+
   .mindfulness-warper {
     position: fixed;
     bottom: 0;

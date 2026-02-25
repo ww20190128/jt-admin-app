@@ -414,13 +414,12 @@ export default {
                 height: 50px;
                 border-radius: 50%;
                 background: #fff !important; // 强制显示
-                z-index: 1;
               }
 
               // 卡类型文字 - 确保显示
               .name {
                 position: relative;
-                z-index: 2;
+
                 font-size: 11px;
                 font-weight: 500;
                 text-align: center;

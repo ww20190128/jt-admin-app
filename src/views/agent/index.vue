@@ -18,39 +18,36 @@
       />
       <CopyRight />
     </div>
-    <BaseDialog v-model:show="showTopUp" :showConfirmButton="false">
+    <BaseDialog v-model:show="showUpdate" :showConfirmButton="false">
       <div class="dialog-content">
-        <div class="title">充值</div>
+        <div class="title">修改</div>
         <div class="content">
           <div class="field-item">
             <div class="name">代理名称</div>
             <div class="value">万人民币范围</div>
           </div>
           <div class="field-item">
-            <div class="name">充值金额</div>
+            <div class="name">更新密码</div>
             <van-field
               v-model="topUpAmount"
-              placeholder="请输入金额"
+              placeholder="请输入新密码"
               type="number"
               class="top-up-input"
             />
           </div>
           <div class="field-item">
-            <div class="name">充值凭证</div>
-            <van-uploader
-              class="upload-wrap"
-              v-model="topUpProof"
-              :max-count="1"
-              accept="image/*"
-              :max-size="5242880"
-              :after-read="afterRead"
-              :before-read="beforeRead"
+            <div class="name">签约状态</div>
+            <van-field
+              v-model="topUpAmount"
+              placeholder="请输入新密码"
+              type="number"
+              class="top-up-input"
             />
           </div>
         </div>
         <div class="botton-wrap">
-          <div class="confirm-botton" @click="handleTopUpConfirm">确定</div>
-          <div class="cancel-botton" @click="showTopUp = false">取消</div>
+          <div class="confirm-botton" @click="handleUpdateConfirm">确定</div>
+          <div class="cancel-botton" @click="showUpdate = false">取消</div>
         </div>
       </div>
     </BaseDialog>
@@ -67,7 +64,7 @@ import HeaderTitle from "@/components/HeaderTitle";
 import CopyRight from "@/components/CopyRight";
 import Swipe from "./components/Swipe";
 import Navigation from "./components/Navigation";
-import CardList from "./components/CardList";
+
 import ShadowButton from "./components/ShadowButton";
 import CellList from "./components/CellList";
 import SelectCardList from "@/components/SelectCardList";
@@ -93,7 +90,6 @@ export default {
     Swipe,
     Navigation,
     HeaderTitle,
-    CardList,
     ShadowButton,
     CellList,
     CellCardList,
@@ -111,11 +107,10 @@ export default {
       count: 0, // 总数
       query: {
         pageIndex: 1, // 当前页
-        pageSize: 4, // 每页数量
-        classifyId: 103, // 热卖火爆
+        pageSize: 20, // 每页数量
       },
       maxPageNum: 1, // 最大页码数
-      showTopUp: false, // 充值弹窗
+      showUpdate: true, // 修改
       topUpProof: [], // 充值凭证
       topUpAmount: "20", // 充值金额
     });
@@ -136,53 +131,16 @@ export default {
 
     // 初始化首页数据
     async function init() {
-      try {
-        const loading = loadingToast(); // 增加加载提示
-        const { data } = await getAgentTopupList({
-          pageIndex: 1,
-          pageSize: 4,
-          status: 1,
-        });
-        loading.clear();
-        state.list = data.list;
-        state.count = data.count;
-        console.log(data);
-      } catch (error) {
-        console.log("初始化数据失败：", error);
-        loadingToast().clear();
-        Toast("数据加载失败");
-      }
-    }
-
-    // 换一批
-    async function handleToggleHotList() {
-      try {
-        if (state.query.pageIndex >= state.maxPageNum) {
-          state.query.pageIndex = 1;
-        } else {
-          state.query.pageIndex++;
-        }
-        const loading = loadingToast();
-        // 注意：原代码用了未定义的getListByClassify和state.query.pageLimit，这里临时注释，需根据实际接口调整
-        // const { list, totalNum } = await getListByClassify(state.query);
-        // loading.clear();
-        // state.newList = list;
-        // state.maxPageNum = Math.ceil(totalNum / state.query.pageLimit);
-        loading.clear();
-      } catch (error) {
-        console.log("换一批失败：", error);
-        loadingToast().clear();
-      }
-    }
-
-    // 测评详情
-    function handleDetailItem({ id }) {
-      router.push({
-        path: "/detail",
-        query: {
-          testPaperId: id,
-        },
+      const loading = loadingToast(); // 增加加载提示
+      const { data } = await getAgentTopupList({
+        pageIndex: 1,
+        pageSize: 20,
+        status: 1,
       });
+      loading.clear();
+      state.list = data.list;
+      state.count = data.count;
+      console.log(data);
     }
 
     // 图片上传前校验
@@ -214,7 +172,7 @@ export default {
     }
 
     // 充值确认
-    function handleTopUpConfirm() {
+    function handleUpdateConfirm() {
       if (!state.topUpAmount || Number(state.topUpAmount) <= 0) {
         Toast("请输入有效的充值金额");
         return;
@@ -229,10 +187,8 @@ export default {
     }
 
     return {
-      handleDetailItem,
-      handleToggleHotList,
       onNavSearch,
-      handleTopUpConfirm,
+      handleUpdateConfirm,
       beforeRead,
       afterRead,
       ...toRefs(state),
