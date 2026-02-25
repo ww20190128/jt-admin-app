@@ -62,3 +62,12 @@ export function topuplist(params) {
     params: params,
   });
 }
+
+// 上传图片
+export function uploadFile(params) {
+  return request({
+    url: "/public/uploadFile",
+    method: "post",
+    data: params,
+  });
+}
