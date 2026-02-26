@@ -4,16 +4,19 @@
       <div class="left" @click="$router.go(-1)">
         <img src="@/assets/images/icon/back.png" alt="返回" />
       </div>
+      <div class="right">
+        <div @click="gotoTrain" class="botton">训练设置</div>
+      </div>
     </div>
     <!-- 1. 用户详情区 -->
     <div class="section user-info-section" v-if="accountInfo">
-      <h3 class="section-title">用户详情</h3>
+      <div class="section-title">用户详情</div>
       <div class="account-info-wrap">
         <div class="form-row">
           <label>姓名</label>
           <div class="value-wrap">
             <span>{{ accountInfo.username }}</span>
-            <span class="edit-arrow">></span>
+            <span class="edit-arrow" @click="showUpdate">></span>
           </div>
         </div>
         <div class="form-row">
@@ -26,21 +29,21 @@
           <label>性别</label>
           <div class="value-wrap">
             <span>{{ accountInfo.sex == "1" ? "男" : "女" }}</span>
-            <span class="edit-arrow">></span>
+            <span class="edit-arrow" @click="showUpdate">></span>
           </div>
         </div>
         <div class="form-row">
           <label>年龄</label>
           <div class="value-wrap">
             <span>{{ getAge() }}</span>
-            <span class="edit-arrow">></span>
+            <span class="edit-arrow" @click="showUpdate">></span>
           </div>
         </div>
         <div class="form-row">
           <label>当前卡类型</label>
           <div class="value-wrap">
             <span>{{ getCurrentCardType() }}</span>
-            <span class="edit-arrow">></span>
+            <span class="edit-arrow" @click="showUpdate">></span>
           </div>
         </div>
         <div class="form-row">
@@ -53,14 +56,14 @@
           <label>状态</label>
           <div class="value-wrap">
             <span>{{ accountInfo.status == "1" ? "正常" : "暂停" }}</span>
-            <span class="edit-arrow">></span>
+            <span class="edit-arrow" @click="showUpdate">></span>
           </div>
         </div>
         <div class="form-row">
           <label>重置密码</label>
           <div class="value-wrap">
             <span></span>
-            <span class="edit-arrow">></span>
+            <span class="edit-arrow" @click="showUpdate">></span>
           </div>
         </div>
       </div>
@@ -71,20 +74,28 @@
       <h3 class="section-title">训练方案</h3>
       <div class="plan-wrap">
         <div class="item-list">
-          <div class="item" v-for="item in trainingItems" :key="item.key">
+          <div
+            class="item"
+            v-for="item in planSettings.train_plan"
+            :key="item.key"
+          >
             <div class="item-left">
               <van-checkbox v-model="item.checked">{{
-                item.name
+                item.course_id
               }}</van-checkbox>
             </div>
             <div class="item-right">
               <span>训练时长(分):</span>
               <div class="num-ctrl">
-                <button @click="item.duration = Math.max(0, item.duration - 1)">
+                <button
+                  @click="
+                    item.course_duration = Math.max(0, item.course_duration - 1)
+                  "
+                >
                   −
                 </button>
-                <span>{{ item.duration }}</span>
-                <button @click="item.duration += 1">+</button>
+                <span>{{ item.course_duration }}</span>
+                <button @click="item.course_duration += 1">+</button>
               </div>
             </div>
           </div>
@@ -92,18 +103,18 @@
         <div class="plan-op-wrap">
           <div class="form-row">
             <label>遮挡设置</label>
-            <select v-model="planSettings.occlusion">
-              <option value="双眼">双眼</option>
-              <option value="左眼">左眼</option>
-              <option value="右眼">右眼</option>
+            <select v-model="planSettings.show_eye">
+              <option value="1">双眼</option>
+              <option value="2">左眼</option>
+              <option value="3">右眼</option>
             </select>
           </div>
           <div class="form-row">
             <label>集合散开模式</label>
-            <select v-model="planSettings.convergenceMode">
-              <option value="混合模式">混合模式</option>
-              <option value="集合优先">集合优先</option>
-              <option value="散开优先">散开优先</option>
+            <select v-model="planSettings.binocular_model">
+              <option value="1">混合模式</option>
+              <option value="2">集合优先</option>
+              <option value="3">散开优先</option>
             </select>
           </div>
           <div class="form-row">
@@ -111,16 +122,16 @@
             <div class="num-ctrl">
               <button
                 @click="
-                  planSettings.totalDuration = Math.max(
+                  planSettings.max_train_time = Math.max(
                     0,
-                    planSettings.totalDuration - 1
+                    planSettings.max_train_time - 1
                   )
                 "
               >
                 −
               </button>
-              <span>{{ planSettings.totalDuration }}</span>
-              <button @click="planSettings.totalDuration += 1">+</button>
+              <span>{{ planSettings.max_train_time }}</span>
+              <button @click="planSettings.max_train_time += 1">+</button>
             </div>
           </div>
         </div>
@@ -137,19 +148,19 @@
 
     <!-- 4. 档案列表区 -->
     <div class="section archive-section">
-      <h3 class="section-title">档案列表</h3>
+      <h3 class="section-title">训练记录</h3>
       <div class="archive-wrap">
-        <div
-          class="archive-item"
-          v-for="item in archiveList"
-          :key="item.id"
-          @click="handleJumpToArchive(item.id)"
-        >
+        <div class="archive-item" v-for="item in trainlog" :key="item.id">
           <span>档案 {{ item.id }}</span>
           <span class="arrow">→</span>
         </div>
-        <div v-if="archiveList.length === 0" class="empty-tip">暂无档案</div>
+        <div v-if="trainlog.length === 0" class="empty-tip">暂无训练记录</div>
       </div>
+    </div>
+
+    <!-- 4. 档案列表区 -->
+    <div class="section archive-section">
+      <h3 class="section-title">训练联系</h3>
     </div>
   </div>
   <BaseDialog v-model:show="showUpdateAccount" :showConfirmButton="false">
@@ -224,10 +235,22 @@
             placeholder="请选择出生日期"
           />
         </div>
+
+        <div class="form-row">
+          <label>重置密码</label>
+          <input
+            type="password"
+            v-model="accountInfo.password"
+            class="form-input"
+            placeholder="请输入新密码"
+          />
+        </div>
       </div>
       <div class="botton-wrap">
-        <div class="confirm-botton" @click="handleTopUpConfirm">确定</div>
-        <div class="cancel-botton" @click="showTopUp = false">取消</div>
+        <div class="confirm-botton" @click="handleUpdateAccountConfirm">
+          确定
+        </div>
+        <div class="cancel-botton" @click="showUpdateAccount = false">取消</div>
       </div>
     </div>
   </BaseDialog>
@@ -239,7 +262,7 @@ import { useRouter, useRoute } from "vue-router";
 import { Toast } from "vant";
 import { get } from "lodash";
 
-import { getPlan } from "@/api/admin";
+import { getPlan, setPlan, trainlog } from "@/api/admin";
 import BaseDialog from "@/components/BaseDialog";
 export default {
   name: "account_info",
@@ -276,11 +299,12 @@ export default {
       ],
       planSettings: {
         occlusion: "双眼",
-        convergenceMode: "混合模式",
+        binocular_model: "混合模式",
         totalDuration: 120,
+        train_plan: [],
       },
-      // 档案列表
-      archiveList: [],
+      // 训练记录
+      trainlog: [],
       showUpdateAccount: false, // 显示修改账号信息
     });
 
@@ -316,7 +340,13 @@ export default {
       console.log("accountInfo:", accountInfo);
 
       // 2. 获取训练方案
-      const { data } = await getPlan({ id: id });
+      const { data } = await getPlan({ id: 10254 });
+      state.planSettings = data;
+
+      // 获取训练记录
+
+      const { data1 } = await trainlog({ id: 10254 });
+      state.trainlog = data1.list;
     }
 
     // 保存用户信息
@@ -360,22 +390,37 @@ export default {
     // 训练方案确认
     async function handlePlanConfirm() {
       try {
-        await saveTrainingPlan({
-          userId,
-          items: state.trainingItems,
-          settings: state.planSettings,
-        });
+        await setPlan({ id: id, ...state.planSettings });
         Toast.success("方案保存成功");
       } catch (err) {
         Toast.fail("方案保存失败");
       }
     }
 
-    // 跳转到档案页面
-    function handleJumpToArchive(archiveId) {
-      router.push({ path: "/archive", query: { id: archiveId, userId } });
+    function showUpdate() {
+      state.showUpdateAccount = true;
     }
-
+    // 确认修改账号信息
+    async function handleUpdateAccountConfirm() {
+      try {
+        await updateUserInfo({ id: userId, ...state.accountInfo });
+        Toast.success("修改成功");
+        state.showUpdateAccount = false;
+        // 刷新页面数据
+        init();
+      } catch (err) {
+        Toast.fail("修改失败");
+      }
+    }
+    // 跳转到训练设置页面
+    function gotoTrain() {
+      router.push({
+        path: "/account/trainSettings",
+        query: {
+          id: id,
+        },
+      });
+    }
     return {
       ...toRefs(state),
       handleSaveInfo,
@@ -383,15 +428,35 @@ export default {
       handleCardOpConfirm,
       handlePlanCancel,
       handlePlanConfirm,
-      handleJumpToArchive,
+
       getAge,
       getCurrentCardType,
+      showUpdate,
+      handleUpdateAccountConfirm,
+      gotoTrain,
     };
   },
 };
 </script>
 
 <style lang="less" scoped>
+.botton {
+  height: 35px;
+  line-height: 35px;
+  padding: 0 10px;
+  text-align: center;
+  background-color: @primary-color;
+  color: #ffffff;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+
+  &:active {
+    background-color: #1d4ed8;
+  }
+}
 @padding-base: 16px;
 @primary-color: #2563eb;
 @grey-color: #4e5969;

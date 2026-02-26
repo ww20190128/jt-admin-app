@@ -13,7 +13,7 @@
       </HeaderTitle>
       <CellList
         :data="list"
-        @clickItem="handleDetailItem"
+        @clickUpdate="handleUpdateItem"
         v-if="list && list.length > 0"
       />
       <CopyRight />
@@ -24,12 +24,12 @@
         <div class="content">
           <div class="field-item">
             <div class="name">代理名称</div>
-            <div class="value">万人民币范围</div>
+            <div class="value">{{ updateInfo.name }}</div>
           </div>
           <div class="field-item">
             <div class="name">更新密码</div>
             <van-field
-              v-model="topUpAmount"
+              v-model="updateInfo.password"
               placeholder="请输入新密码"
               type="number"
               class="top-up-input"
@@ -37,12 +37,26 @@
           </div>
           <div class="field-item">
             <div class="name">签约状态</div>
-            <van-field
-              v-model="topUpAmount"
-              placeholder="请输入新密码"
-              type="number"
-              class="top-up-input"
-            />
+            <div class="radio-group">
+              <label class="radio-item">
+                <input
+                  type="radio"
+                  v-model="updateInfo.status"
+                  value="1"
+                  name="c"
+                />
+                已签约
+              </label>
+              <label class="radio-item">
+                <input
+                  type="radio"
+                  v-model="updateInfo.status"
+                  value="2"
+                  name="status"
+                />
+                解除签约
+              </label>
+            </div>
           </div>
         </div>
         <div class="botton-wrap">
@@ -82,6 +96,7 @@ import { loadingToast, Toast } from "@/plugins/vant"; // 补充Toast提示
 import BaseDialog from "@/components/BaseDialog";
 
 import { Uploader, Field } from "vant";
+import { update } from "lodash";
 
 export default {
   name: "agent",
@@ -110,9 +125,10 @@ export default {
         pageSize: 20, // 每页数量
       },
       maxPageNum: 1, // 最大页码数
-      showUpdate: true, // 修改
+      showUpdate: false, // 修改
       topUpProof: [], // 充值凭证
       topUpAmount: "20", // 充值金额
+      updateInfo: {}, // 修改项信息
     });
 
     onMounted(() => {
@@ -173,19 +189,17 @@ export default {
 
     // 充值确认
     function handleUpdateConfirm() {
-      if (!state.topUpAmount || Number(state.topUpAmount) <= 0) {
-        Toast("请输入有效的充值金额");
-        return;
-      }
-      if (state.topUpProof.length === 0) {
-        Toast("请上传充值凭证");
-        return;
-      }
-      // 执行充值逻辑
-      Toast("充值申请已提交");
-      state.showTopUp = false;
+      state.showUpdate = false;
     }
-
+    function handleUpdateItem(item) {
+      state.updateInfo = {
+        id: item.Agent.id,
+        name: item.Agent.name,
+        password: "",
+        status: item.Agent.status,
+      };
+      state.showUpdate = true;
+    }
     return {
       onNavSearch,
       handleUpdateConfirm,
@@ -197,6 +211,7 @@ export default {
       boutiqueIcon,
       recommendIcon,
       newTagImg,
+      handleUpdateItem,
     };
   },
 };

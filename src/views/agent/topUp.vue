@@ -87,8 +87,8 @@
 import { reactive, toRefs, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Toast, Uploader, Icon, Loading } from "vant";
-import { recharge, uploadFile } from "@/api/admin";
-
+import { topup, uploadFile } from "@/api/admin";
+import axios from "axios";
 export default {
   name: "top-up",
   components: {
@@ -139,8 +139,13 @@ export default {
         forbidClick: true,
         duration: 0,
       });
-
-      const { data } = await uploadFile({ file: file.file });
+      const formData = new FormData();
+      formData.append("file", file.file); // 二进制文件
+      formData.append("method", "post");
+      formData.append("filename", "receipt"); // 文件名，可根据实际修改
+      formData.append("action", "#"); // 对应截图中的 action 字段
+      const { data } = await uploadFile(formData);
+      state.receipt = data.path;
       setTimeout(() => {
         loading.clear();
         file.status = "success";
@@ -167,14 +172,17 @@ export default {
         return;
       }
 
+      if (!state.receipt) {
+        Toast("请上传充值凭证");
+        return;
+      }
       try {
-        const params = {
-          agentId: state.id,
+        const { data } = await topup({
+          agentId: Number(state.id),
           receipt: state.receipt,
           amount: Number(state.amount),
           remark: state.remark,
-        };
-        const { data } = await recharge(params);
+        });
         Toast("充值成功");
         router.go(-1);
       } catch (error) {

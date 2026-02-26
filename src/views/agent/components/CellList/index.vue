@@ -1,14 +1,9 @@
 <template>
   <div class="cell-list">
     <div class="list">
-      <div
-        class="item"
-        v-for="item in data"
-        :key="item"
-        @click="handleItem(item)"
-      >
+      <div class="item" v-for="item in data" :key="item">
         <div class="item-left">
-          <div class="avatar">
+          <div class="avatar" @click="handleItemShowUpdate(item)">
             <van-image fit="cover" :src="logoImg" />
           </div>
           <div class="info-main">
@@ -54,6 +49,7 @@
         <div
           class="status-tag"
           :class="item.Agent.status === 2 ? 'status-normal' : 'status-abnormal'"
+          @click="handleItemShowUpdate(item)"
         >
           {{ item.Agent.status === 2 ? "签约中" : "已解约" }}
         </div>
@@ -73,32 +69,11 @@ export default {
       type: Array,
       default: () => [],
     },
-    couponInfo: {
-      type: Object,
-      default: () => {},
-    },
   },
-  setup(props) {
+  setup(props, ctx) {
     const router = useRouter();
-    const first = computed(() => {
-      const [value] = props.data.splice(0, 1);
-      return value || {};
-    });
-    const style = computed(() => {
-      return {
-        background: `linear-gradient(rgba(228, 228, 228, 0), rgba(0, 0, 0, 0.5)),
-    url(${first.value.coverImg}) center
-      center / 100% no-repeat`,
-      };
-    });
-
-    function handleItem({ id }) {
-      router.push({
-        path: "/detail",
-        query: {
-          testPaperId: id,
-        },
-      });
+    function handleItemShowUpdate(item) {
+      ctx.emit("clickUpdate", item);
     }
     function gotoTopUp({ Agent }) {
       router.push({
@@ -111,9 +86,7 @@ export default {
     }
 
     return {
-      first,
-      style,
-      handleItem,
+      handleItemShowUpdate,
       logoImg,
       gotoTopUp,
     };

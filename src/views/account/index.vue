@@ -64,7 +64,7 @@
             </div>
 
             <div class="bottom-wrap">
-              有效时间:{{ formatTime(item?.createdAt) }} -
+              有效期:{{ formatTime(item?.createdAt) }} -
               {{ formatTime(item?.expiredAt) }}
             </div>
           </div>
@@ -322,7 +322,6 @@ export default {
         }
       }
 
-      // 核心：优化后的item样式
       .item {
         cursor: pointer;
         padding: 12px 12px 20px 12px;
@@ -346,11 +345,11 @@ export default {
           bottom: 0;
           left: 0;
           width: 100%;
-          height: 20px;
-          line-height: 20px;
+          height: 25px;
+          line-height: 25px;
           text-align: center;
           border-radius: 0px 0px 12px 12px;
-          font-size: 11px;
+          font-size: 12px;
           background-color: #ff5d7d;
           opacity: 0.7;
           color: #fff;

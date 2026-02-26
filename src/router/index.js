@@ -93,6 +93,16 @@ export const routes = [
           showTabBar: false,
         },
       },
+
+      {
+        path: "/account/trainSettings",
+        name: "account-trainSettings",
+        component: () => import("@/views/account/trainSettings"),
+        meta: {
+          title: "训练设置",
+          showTabBar: false,
+        },
+      },
       {
         path: "/account/create",
         name: "account-create",

@@ -118,11 +118,12 @@ export default {
     // 响应式数据
     const state = reactive({
       accountInfo: {
-        account: "", // 手机号
-        birthday: "", // 出生日期
+        account: "13718693103", // 手机号
+        birthdayTime: "", // 出生日期
         sex: "0", // 性别，默认未知
-        typeId: "", // 卡类型ID
-        username: "", // 姓名
+        typeId: "1", // 卡类型ID
+        username: "ww", // 姓名
+        birthday: 0,
       },
       classifyList: [
         { id: 99, name: "体验卡" },
@@ -156,8 +157,8 @@ export default {
 
     // 根据出生日期计算年龄
     const calculateAge = () => {
-      if (!state.accountInfo.birthday) return 0;
-      const birthDate = new Date(state.accountInfo.birthday);
+      if (!state.accountInfo.birthdayTime) return 0;
+      const birthDate = new Date(state.accountInfo.birthdayTime);
       const now = new Date();
       let age = now.getFullYear() - birthDate.getFullYear();
       // 校验月份和日期，未到生日则年龄减1
@@ -168,7 +169,7 @@ export default {
       ) {
         age--;
       }
-      return age < 0 ? 0 : age;
+      return age < 0 ? 0 : Number(age);
     };
 
     // 取消按钮逻辑
@@ -192,12 +193,12 @@ export default {
         Toast("请选择卡类型");
         return;
       }
-      state.accountInfo.age = calculateAge();
+      state.accountInfo.birthday = Number(calculateAge());
       const { data } = await buyvip(state.accountInfo);
       Toast("创建成功");
       // 提交成功后返回上一页
       router.go(-1);
-    };
+    }
 
     onMounted(async () => {});
 

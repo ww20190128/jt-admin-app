@@ -53,7 +53,14 @@ export function getPlan(params) {
     params: params,
   });
 }
-
+// 更新方案
+export function setPlan(params) {
+  return request({
+    url: "/plan/" + params.id,
+    method: "post",
+    data: params,
+  });
+}
 // 充值审核
 export function topuplist(params) {
   return request({
@@ -69,5 +76,32 @@ export function uploadFile(params) {
     url: "/public/uploadFile",
     method: "post",
     data: params,
+  });
+}
+
+// 充值
+export function topup(params) {
+  return request({
+    url: "/agent/topup",
+    method: "post",
+    data: params,
+  });
+}
+
+// 训练记录
+export function trainlog(params) {
+  return request({
+    url: "/members/trainlog",
+    method: "post",
+    data: params,
+  });
+}
+
+// 游戏列表
+export function gameList(params) {
+  return request({
+    url: "/games/list",
+    method: "get",
+    params: params,
   });
 }
