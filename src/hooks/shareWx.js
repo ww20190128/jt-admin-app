@@ -1,10 +1,4 @@
-import {
-  getWeChatConfig,
-  getShareAppInfo,
-  getShareTestPaperInfo,
-  getShareMindfulnessInfo,
-  getShareBusinessInfo,
-} from "@/api/app";
+
 import wx from "weixin-js-sdk"; // 引入微信SDK
 import { useAgent } from "@/hooks/useAgent";
 //

@@ -97,7 +97,7 @@ export default {
     const router = useRouter();
     const route = useRoute();
     const state = reactive({
-      activeIndex: -1,
+      activeIndex: 0,
       option: [
         { text: "按时间", value: 1 },
         { text: "按热度", value: 2 },

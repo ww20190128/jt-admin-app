@@ -105,3 +105,32 @@ export function gameList(params) {
     params: params,
   });
 }
+
+
+// 修改商户密码
+export function resetAgentPassword(params) {
+  return request({
+    url: "/agent/resetpassword",
+    method: "post",
+    data: params,
+  });
+}
+
+
+// 删除商户
+export function deleteAgent(params) {
+  return request({
+    url: "/agent/" + params.id,
+    method: "delete",
+    data: params,
+  });
+}
+
+// 修改用户信息
+export function updateAccount(params) {
+  return request({
+    url: "/members/" + params.id,
+    method: "put",
+    data: params,
+  });
+}

@@ -93,11 +93,9 @@
           </select>
         </div>
       </div>
-
-      <!-- 操作按钮（优化布局） -->
       <div class="op-wrap">
         <button class="op-btn cancel-btn" @click="handleCancel">取消</button>
-        <button class="op-btn confirm-btn" @click="handleCreate">创建</button>
+        <button class="op-btn confirm-btn" @click="handleCreate">开卡</button>
       </div>
     </div>
   </div>
@@ -118,11 +116,11 @@ export default {
     // 响应式数据
     const state = reactive({
       accountInfo: {
-        account: "13718693103", // 手机号
+        account: "", // 手机号
         birthdayTime: "", // 出生日期
         sex: "0", // 性别，默认未知
-        typeId: "1", // 卡类型ID
-        username: "ww", // 姓名
+        typeId: "99", // 卡类型ID
+        username: "", // 姓名
         birthday: 0,
       },
       classifyList: [
@@ -181,13 +179,11 @@ export default {
     async function handleCreate() {
       // 先验证手机号
       if (!validatePhone()) return;
-
       // 验证姓名
       if (!state.accountInfo.username.trim()) {
         Toast("请输入姓名");
         return;
       }
-
       // 验证卡类型
       if (!state.accountInfo.typeId) {
         Toast("请选择卡类型");
@@ -195,8 +191,7 @@ export default {
       }
       state.accountInfo.birthday = Number(calculateAge());
       const { data } = await buyvip(state.accountInfo);
-      Toast("创建成功");
-      // 提交成功后返回上一页
+      Toast("开卡成功");
       router.go(-1);
     }
 

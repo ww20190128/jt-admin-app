@@ -49,7 +49,8 @@
         <div class="form-row">
           <label>有效期至</label>
           <div class="value-wrap">
-            <span>{{ accountInfo.expiredAt }}</span>
+            <span>{{ formatTime(accountInfo.expiredAt) }}</span
+            >
           </div>
         </div>
         <div class="form-row">
@@ -157,11 +158,6 @@
         <div v-if="trainlog.length === 0" class="empty-tip">暂无训练记录</div>
       </div>
     </div>
-
-    <!-- 4. 档案列表区 -->
-    <div class="section archive-section">
-      <h3 class="section-title">训练联系</h3>
-    </div>
   </div>
   <BaseDialog v-model:show="showUpdateAccount" :showConfirmButton="false">
     <div class="dialog-content">
@@ -247,10 +243,10 @@
         </div>
       </div>
       <div class="botton-wrap">
+        <div class="cancel-botton" @click="showUpdateAccount = false">取消</div>
         <div class="confirm-botton" @click="handleUpdateAccountConfirm">
           确定
         </div>
-        <div class="cancel-botton" @click="showUpdateAccount = false">取消</div>
       </div>
     </div>
   </BaseDialog>
@@ -260,10 +256,10 @@
 import { reactive, toRefs, onMounted, inject } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Toast } from "vant";
-import { get } from "lodash";
 
 import { getPlan, setPlan, trainlog } from "@/api/admin";
 import BaseDialog from "@/components/BaseDialog";
+import { updateAccount } from "@/api/admin";
 export default {
   name: "account_info",
   components: {
@@ -287,16 +283,6 @@ export default {
         { id: 104, name: "年卡Plus" },
       ],
 
-      // 训练方案
-      trainingItems: [
-        { key: "stimulus", name: "刺激训练", checked: false, duration: 10 },
-        { key: "fine", name: "精细", checked: false, duration: 10 },
-        { key: "suppression", name: "脱抑制", checked: false, duration: 10 },
-        { key: "center", name: "旁中心", checked: false, duration: 10 },
-        { key: "simultaneous", name: "同时视觉", checked: false, duration: 10 },
-        { key: "fusion", name: "双眼融合", checked: false, duration: 10 },
-        { key: "muscle", name: "眼肌", checked: false, duration: 10 },
-      ],
       planSettings: {
         occlusion: "双眼",
         binocular_model: "混合模式",
@@ -306,6 +292,7 @@ export default {
       // 训练记录
       trainlog: [],
       showUpdateAccount: false, // 显示修改账号信息
+      phoneError: "", // 手机号错误提示
     });
 
     onMounted(async () => {
@@ -316,6 +303,40 @@ export default {
       await init();
     });
 
+    // 手机号格式验证
+    const validatePhone = () => {
+      const { account } = state.accountInfo;
+      // 清空之前的错误提示
+      state.phoneError = "";
+
+      if (!account) {
+        state.phoneError = "手机号不能为空";
+        return false;
+      }
+
+      // 手机号正则验证（11位数字，以1开头）
+      const phoneReg = /^1[3-9]\d{9}$/;
+      if (!phoneReg.test(account)) {
+        state.phoneError = "请输入正确的手机号格式";
+        return false;
+      }
+      return true;
+    };
+
+    // 格式化时间
+    const formatTime = (time) => {
+      if (!time) return "暂无";
+      const date = new Date(time);
+      if (isNaN(date.getTime())) return "格式错误";
+
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const hours = String(date.getHours()).padStart(2, "0");
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+
+      return `${year}/${month}/${day} ${hours}:${minutes}`;
+    };
     // 计算年龄
     const getAge = () => {
       if (!state.accountInfo.birthday) return "";
@@ -402,15 +423,10 @@ export default {
     }
     // 确认修改账号信息
     async function handleUpdateAccountConfirm() {
-      try {
-        await updateUserInfo({ id: userId, ...state.accountInfo });
-        Toast.success("修改成功");
-        state.showUpdateAccount = false;
-        // 刷新页面数据
-        init();
-      } catch (err) {
-        Toast.fail("修改失败");
-      }
+      await updateAccount({ id: userId, ...state.accountInfo }); // birthday sex  username
+      Toast.success("修改成功");
+      state.showUpdateAccount = false;
+      init();
     }
     // 跳转到训练设置页面
     function gotoTrain() {
@@ -434,6 +450,7 @@ export default {
       showUpdate,
       handleUpdateAccountConfirm,
       gotoTrain,
+      formatTime,
     };
   },
 };

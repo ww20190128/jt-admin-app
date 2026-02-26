@@ -1,32 +1,6 @@
 import { RouterView, createRouter, createWebHistory } from "vue-router";
 import { createRouterGuards } from "./routerGuards";
-import qs from "qs";
-import { useAgent } from "@/hooks/useAgent";
-import { getToken } from "@/utils/auth";
-import { store } from "@/store";
-const { isWeChat } = useAgent();
 
-function authBeforeEnter(to, from, next, path) {
-  const { code } = to.query;
-  // 逻辑同 我的评测
-  if (isWeChat) {
-    if (code) {
-      next();
-    } else {
-      if (!getToken()) {
-        const search = qs.stringify(to.query);
-        store.dispatch("user/auth", {
-          authType: 1,
-          redirectUrl: `${window.location.origin}${path}?${search}`,
-        });
-      } else {
-        next();
-      }
-    }
-  } else {
-    next();
-  }
-}
 /* 
 meta 参数说明
 showTabBar : 是否显示底部导航栏 true显示  false或不填隐藏
@@ -64,15 +38,6 @@ export const routes = [
         meta: {
           title: "代理详情",
           showTabBar: false,
-        },
-      },
-      {
-        path: "/user",
-        name: "user",
-        component: () => import("@/views/user/index"),
-        meta: {
-          title: "用户",
-          showTabBar: true,
         },
       },
       {
@@ -142,7 +107,7 @@ export const routes = [
   // 404 直接重定向到首页
   {
     path: "/:pathMatch(.*)*",
-    redirect: "/home",
+    redirect: "/login",
   },
 ];
 

@@ -1,6 +1,6 @@
 import wx from "weixin-js-sdk"; // 引入微信SDK
 import { Toast } from "vant";
-import { getWeChatConfig } from "@/api/app";
+
 import { useAgent } from "@/hooks/useAgent";
 
 // 微信-提现钩子
@@ -10,16 +10,6 @@ export const wxTransfer = async (params, successCallback, errCallback) => {
     // 微信外不执行
     return;
   }
-  const {
-    debug,
-    appId,
-    timestamp,
-    nonceStr,
-    signature,
-    jsApiList,
-    openTagList,
-    url,
-  } = await getWeChatConfig({ url: window.location.href });
 
   wx.config({
     debug: debug ? true : false,
@@ -57,9 +47,8 @@ export const wxTransfer = async (params, successCallback, errCallback) => {
                 if (typeof errCallback === "function") {
                   errCallback(); // 用户取消后执行回调
                 }
-
               }
-            }
+            },
           );
         } else {
           Toast("你的微信版本过低，请更新至最新版本。");

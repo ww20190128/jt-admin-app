@@ -8,21 +8,21 @@
     <div class="section user-info-section">
       <div class="account-info-wrap">
         <div class="form-row">
-          <label>商铺ID</label>
+          <div class="label">商铺ID1</div>
           <div class="value-wrap">
             <span>{{ id }}</span>
           </div>
         </div>
 
         <div class="form-row">
-          <label>商铺名</label>
+          <div class="label">商铺名称</div>
           <div class="value-wrap">
             <span>{{ name }}</span>
           </div>
         </div>
 
         <div class="form-row required">
-          <label>充值金额</label>
+          <div class="label">充值金额</div>
           <div class="value-wrap">
             <!-- 金额输入框：仅允许数字（含小数点） -->
             <input
@@ -36,7 +36,7 @@
         </div>
 
         <div class="form-row">
-          <label>回执单</label>
+          <div class="label">回执单</div>
           <div class="receipt-wrap">
             <!-- 上传组件容器 -->
             <van-uploader
@@ -61,14 +61,14 @@
         </div>
 
         <div class="form-row">
-          <label>备注</label>
+          <div class="label">备注</div>
           <div class="value-wrap">
             <!-- 备注改为多行文本框 -->
             <textarea
               v-model="remark"
               class="form-textarea"
               placeholder="请输入备注（选填）"
-              rows="4"
+              rows="2"
             ></textarea>
           </div>
         </div>
@@ -88,7 +88,7 @@ import { reactive, toRefs, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Toast, Uploader, Icon, Loading } from "vant";
 import { topup, uploadFile } from "@/api/admin";
-import axios from "axios";
+
 export default {
   name: "top-up",
   components: {
@@ -104,7 +104,7 @@ export default {
     const state = reactive({
       id: id || "",
       name: name || "",
-      amount: "20",
+      amount: "1000",
       remark: "",
       topUpProof: [], // 充值凭证
       receipt: "", // 上传成功后的回执单URL
@@ -171,7 +171,6 @@ export default {
         Toast("请输入有效的充值金额");
         return;
       }
-
       if (!state.receipt) {
         Toast("请上传充值凭证");
         return;
@@ -187,7 +186,6 @@ export default {
         router.go(-1);
       } catch (error) {
         Toast("充值失败，请重试");
-        console.error(error);
       }
     }
 
@@ -266,7 +264,7 @@ export default {
 .form-row {
   display: flex;
   align-items: flex-start;
-  padding: 20px 0;
+  padding: 10px 0;
   border-bottom: 1px solid @border-light;
   position: relative;
 
@@ -280,17 +278,23 @@ export default {
     margin-right: 4px;
   }
 
-  label {
+  .label {
+    height: 44px;
+    line-height: 44px;
     flex: 0 0 80px;
     color: @text-main;
     font-size: 15px;
-    padding-top: 4px;
   }
 
   .value-wrap {
+    height: 44px;
     flex: 1;
     display: flex;
     flex-direction: column;
+    span {
+      line-height: 44px;
+      font-size: 15px;
+    }
   }
 
   // 输入框样式优化
@@ -320,7 +324,7 @@ export default {
   // 多行文本框样式优化
   .form-textarea {
     width: 100%;
-    min-height: 100px;
+    min-height: 80px;
     padding: 16px;
     border: 1px solid @border;
     border-radius: @radius-base;
@@ -350,7 +354,7 @@ export default {
 
       // 自定义上传按钮
       .upload-btn {
-        height: 140px;
+        height: 100px;
         border: 1px dashed @border;
         border-radius: @radius-base;
         display: flex;
@@ -386,7 +390,7 @@ export default {
       // 上传后的图片样式
       :deep(.van-uploader__preview) {
         width: 100%;
-        height: 140px;
+        height: 100px;
         border-radius: @radius-base;
         overflow: hidden;
 
@@ -413,14 +417,14 @@ export default {
   display: flex;
   justify-content: center;
   gap: 16px;
-  padding: 20px @padding-base;
+  padding: 40px @padding-base;
   background-color: #fff;
   margin: 12px @padding-base;
   border-radius: @radius-base;
 
   .op-btn {
     flex: 1;
-    height: 48px;
+    height: 44px;
     border-radius: @radius-base;
     font-size: 16px;
     font-weight: 500;

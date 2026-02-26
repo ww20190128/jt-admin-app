@@ -26,12 +26,12 @@
       <!-- 审核订单区域 -->
       <div class="card" v-if="statusList.length">
         <div class="card-header">审核订单</div>
-        
+
         <!-- 状态Tab -->
         <div class="status-tabs">
-          <div 
-            class="tab-item" 
-            v-for="item in statusList" 
+          <div
+            class="tab-item"
+            v-for="item in statusList"
             :key="item.id"
             :class="{ active: activeStatus === item.id }"
             @click="switchStatus(item.id)"
@@ -39,7 +39,7 @@
             {{ item.name }}
           </div>
         </div>
-        
+
         <!-- 订单列表 -->
         <div class="order-list" v-if="topupList.length">
           <div class="order-item" v-for="item in topupList" :key="item.id">
@@ -49,30 +49,37 @@
             </div>
             <div class="order-row">
               <span class="label">商铺：</span>
-              <span class="value">{{ item.Agent?.name || '未知商铺' }}</span>
+              <span class="value">{{ item.Agent?.name || "未知商铺" }}</span>
             </div>
             <div class="order-row">
               <span class="label">备注：</span>
-              <span class="value">{{ item.Agent?.remark || '无' }}</span>
+              <span class="value">{{ item.Agent?.remark || "无" }}</span>
             </div>
             <div class="order-row">
               <span class="label">状态：</span>
-              <span class="value status-tag" :class="getStatusClass(item.status)">
-                {{ statusList.find((s) => s.id === item.status)?.name || '未知' }}
+              <span
+                class="value status-tag"
+                :class="getStatusClass(item.status)"
+              >
+                {{
+                  statusList.find((s) => s.id === item.status)?.name || "未知"
+                }}
+              </span>
+            </div>
+            <div class="order-row">
+              <span class="label">时间：</span>
+              <span class="value">
+                {{ formatTime(item.createdAt) }}
               </span>
             </div>
           </div>
         </div>
-        
+
         <!-- 空数据 -->
-        <div class="empty-tip" v-else>
-          暂无相关订单
-        </div>
-        
+        <div class="empty-tip" v-else>暂无相关订单</div>
+
         <!-- 加载提示 -->
-        <div class="load-tip" v-if="!nomore && topupList.length">
-          加载中...
-        </div>
+        <div class="load-tip" v-if="!nomore && topupList.length">加载中...</div>
       </div>
     </div>
 
@@ -121,7 +128,20 @@ export default {
         router.push({ path: "/login", query: {} });
       }
     });
+    // 格式化时间
+    const formatTime = (time) => {
+      if (!time) return "暂无";
+      const date = new Date(time);
+      if (isNaN(date.getTime())) return "格式错误";
 
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const hours = String(date.getHours()).padStart(2, "0");
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+
+      return `${year}/${month}/${day} ${hours}:${minutes}`;
+    };
     // 用户信息
     const userInfo = computed(() => store.getters.userInfo);
     // 背景图
@@ -178,18 +198,20 @@ export default {
 
     // 登录处理
     function handleLogin() {
-      if (!store.getters.token) {
-        router.push({ path: "/login", query: {} });
-      }
+      router.push({ path: "/login", query: {} });
     }
 
     // 获取状态样式类
     function getStatusClass(status) {
       switch (status) {
-        case 1: return "pending"; // 待处理
-        case 2: return "completed"; // 已处理
-        case 3: return "rejected"; // 已拒绝
-        default: return "";
+        case 1:
+          return "pending"; // 待处理
+        case 2:
+          return "completed"; // 已处理
+        case 3:
+          return "rejected"; // 已拒绝
+        default:
+          return "";
       }
     }
 
@@ -202,6 +224,7 @@ export default {
       handleLogin,
       switchStatus,
       getStatusClass,
+      formatTime,
     };
   },
 };
@@ -301,7 +324,7 @@ export default {
           position: relative;
 
           &::after {
-            content: '';
+            content: "";
             position: absolute;
             bottom: 0;
             left: 50%;
