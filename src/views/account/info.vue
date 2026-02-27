@@ -49,8 +49,7 @@
         <div class="form-row">
           <label>有效期至</label>
           <div class="value-wrap">
-            <span>{{ formatTime(accountInfo.expiredAt) }}</span
-            >
+            <span>{{ formatTime(accountInfo.expiredAt) }}</span>
           </div>
         </div>
         <div class="form-row">
@@ -73,66 +72,119 @@
     <!-- 3. 训练方案区 -->
     <div class="section plan-section">
       <h3 class="section-title">训练方案</h3>
+      <p class="duration-label">时长单位：分</p>
       <div class="plan-wrap">
         <div class="item-list">
           <div
             class="item"
-            v-for="item in planSettings.train_plan"
-            :key="item.key"
+            v-for="(item, index) in sortedTrainPlans"
+            :key="item.id || index"
           >
             <div class="item-left">
-              <van-checkbox v-model="item.checked">{{
-                item.course_id
-              }}</van-checkbox>
+              <van-checkbox
+                v-model="item.checked"
+                :label="trainTypeMap[item.course_id] || '未知训练类型'"
+                class="train-type-checkbox"
+              >
+                {{ trainTypeMap[item.course_id] || "未知训练类型" }}
+              </van-checkbox>
             </div>
             <div class="item-right">
-              <span>训练时长(分):</span>
-              <div class="num-ctrl">
-                <button
-                  @click="
-                    item.course_duration = Math.max(0, item.course_duration - 1)
-                  "
-                >
-                  −
-                </button>
-                <span>{{ item.course_duration }}</span>
-                <button @click="item.course_duration += 1">+</button>
+              <!-- 修复滑块容器宽度问题 -->
+              <div class="slider-container">
+                <van-slider
+                  v-model="item.course_duration"
+                  :min="0"
+                  :max="60"
+                  :step="1"
+                  @change="handleDurationChange(item)"
+                  class="custom-slider"
+                  :disabled="!item.checked"
+                />
+                <span class="slider-value">{{ item.course_duration }}</span>
               </div>
             </div>
           </div>
         </div>
         <div class="plan-op-wrap">
-          <div class="form-row">
-            <label>遮挡设置</label>
-            <select v-model="planSettings.show_eye">
-              <option value="1">双眼</option>
-              <option value="2">左眼</option>
-              <option value="3">右眼</option>
-            </select>
+          <!-- 遮挡设置 -->
+          <div class="form-row radio-row">
+            <label class="radio-label">遮挡设置</label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input
+                  type="radio"
+                  v-model="planSettings.show_eye"
+                  value="1"
+                  name="show_eye"
+                />
+                <span class="radio-text">双眼</span>
+              </label>
+              <label class="radio-item">
+                <input
+                  type="radio"
+                  v-model="planSettings.show_eye"
+                  value="2"
+                  name="show_eye"
+                />
+                <span class="radio-text">左眼</span>
+              </label>
+              <label class="radio-item">
+                <input
+                  type="radio"
+                  v-model="planSettings.show_eye"
+                  value="3"
+                  name="show_eye"
+                />
+                <span class="radio-text">右眼</span>
+              </label>
+            </div>
           </div>
-          <div class="form-row">
-            <label>集合散开模式</label>
-            <select v-model="planSettings.binocular_model">
-              <option value="1">混合模式</option>
-              <option value="2">集合优先</option>
-              <option value="3">散开优先</option>
-            </select>
+          <!-- 集合散开模式 -->
+          <div class="form-row radio-row">
+            <label class="radio-label">集合散开模式</label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input
+                  type="radio"
+                  v-model="planSettings.binocular_model"
+                  value="1"
+                  name="binocular_model"
+                />
+                <span class="radio-text">混合模式</span>
+              </label>
+              <label class="radio-item">
+                <input
+                  type="radio"
+                  v-model="planSettings.binocular_model"
+                  value="2"
+                  name="binocular_model"
+                />
+                <span class="radio-text">集合优先</span>
+              </label>
+              <label class="radio-item">
+                <input
+                  type="radio"
+                  v-model="planSettings.binocular_model"
+                  value="3"
+                  name="binocular_model"
+                />
+                <span class="radio-text">散开优先</span>
+              </label>
+            </div>
           </div>
-          <div class="form-row">
-            <label>训练时长(分钟)</label>
-            <div class="num-ctrl">
-              <button
-                @click="
-                  planSettings.max_train_time = Math.max(
-                    0,
-                    planSettings.max_train_time - 1
-                  )
-                "
-              >
-                −
-              </button>
-              <span>{{ planSettings.max_train_time }}</span>
-              <button @click="planSettings.max_train_time += 1">+</button>
+          <!-- 总训练时长 -->
+          <div class="form-row slider-row">
+            <label class="radio-label">总时长</label>
+            <div class="slider-container full-width">
+              <van-slider
+                v-model="totalTrainTime"
+                :min="0"
+                :max="60"
+                :step="1"
+                class="custom-slider"
+              />
+              <p class="slider-value total">{{ totalTrainTime }} 分钟</p>
             </div>
           </div>
         </div>
@@ -253,9 +305,9 @@
 </template>
 
 <script>
-import { reactive, toRefs, onMounted, inject } from "vue";
+import { reactive, toRefs, onMounted, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { Toast } from "vant";
+import { Toast, VanSlider, VanCheckbox } from "vant";
 
 import { getPlan, setPlan, trainlog } from "@/api/admin";
 import BaseDialog from "@/components/BaseDialog";
@@ -264,6 +316,8 @@ export default {
   name: "account_info",
   components: {
     BaseDialog,
+    VanSlider,
+    VanCheckbox,
   },
   setup() {
     const router = useRouter();
@@ -282,11 +336,23 @@ export default {
         { id: 103, name: "年卡" },
         { id: 104, name: "年卡Plus" },
       ],
-
+      trainTypeMap: {
+        1: "刺激训练",
+        2: "变频红光",
+        3: "Gabor视觉",
+        4: "拥挤",
+        5: "精细",
+        8: "旁中心",
+        9: "脱抑制",
+        10: "同时视觉",
+        11: "双眼融合",
+        12: "立体视觉",
+        13: "眼肌",
+      },
       planSettings: {
-        occlusion: "双眼",
-        binocular_model: "混合模式",
-        totalDuration: 120,
+        show_eye: 1,
+        binocular_model: 1,
+        max_train_time: 0,
         train_plan: [],
       },
       // 训练记录
@@ -294,6 +360,59 @@ export default {
       showUpdateAccount: false, // 显示修改账号信息
       phoneError: "", // 手机号错误提示
     });
+
+    // 计算属性：总训练时长（秒转分钟，限制0-60）
+    const totalTrainTime = computed({
+      get() {
+        const minutes = Math.floor(state.planSettings.max_train_time / 60);
+        return Math.min(Math.max(minutes, 0), 60);
+      },
+      set(val) {
+        state.planSettings.max_train_time = val * 60;
+      },
+    });
+
+    // 计算属性：排序训练计划（已设置在前，未设置在后）
+    const sortedTrainPlans = computed(() => {
+      // 1. 已设置的训练计划
+      const setPlans = state.planSettings.train_plan.map((item) => ({
+        ...item,
+        checked: true,
+        // 转换秒为分钟
+        course_duration: Math.min(
+          Math.max(Math.floor(item.course_duration / 60), 0),
+          60
+        ),
+      }));
+
+      // 2. 所有训练类型ID
+      const allCourseIds = Object.keys(state.trainTypeMap).map(Number);
+      // 已设置的训练类型ID
+      const setCourseIds = setPlans.map((item) => item.course_id);
+      // 未设置的训练类型ID
+      const unsetCourseIds = allCourseIds.filter(
+        (id) => !setCourseIds.includes(id)
+      );
+
+      // 3. 构建未设置的训练计划
+      const unsetPlans = unsetCourseIds.map((course_id, index) => ({
+        id: `unset_${index}`,
+        course_id,
+        course_order: setPlans.length + index + 1,
+        course_duration: 0,
+        course_games: [],
+        status: 0,
+        checked: false,
+      }));
+
+      // 4. 合并：已设置 + 未设置
+      return [...setPlans, ...unsetPlans];
+    });
+
+    // 训练时长变化处理（限制0-60）
+    const handleDurationChange = (item) => {
+      item.course_duration = Math.min(Math.max(item.course_duration, 0), 60);
+    };
 
     onMounted(async () => {
       if (!id) {
@@ -365,7 +484,6 @@ export default {
       state.planSettings = data;
 
       // 获取训练记录
-
       const { data1 } = await trainlog({ id: 10254 });
       state.trainlog = data1.list;
     }
@@ -404,14 +522,26 @@ export default {
 
     // 训练方案取消
     function handlePlanCancel() {
-      initPageData(); // 重置为初始数据
+      init(); // 重置为初始数据
       Toast("已重置方案");
     }
 
     // 训练方案确认
     async function handlePlanConfirm() {
       try {
-        await setPlan({ id: id, ...state.planSettings });
+        // 转换训练时长为秒
+        const submitPlan = sortedTrainPlans.value
+          .map((item) => ({
+            ...item,
+            course_duration: item.course_duration * 60,
+          }))
+          .filter((item) => item.checked);
+
+        await setPlan({
+          id: id,
+          ...state.planSettings,
+          train_plan: submitPlan,
+        });
         Toast.success("方案保存成功");
       } catch (err) {
         Toast.fail("方案保存失败");
@@ -423,7 +553,7 @@ export default {
     }
     // 确认修改账号信息
     async function handleUpdateAccountConfirm() {
-      await updateAccount({ id: userId, ...state.accountInfo }); // birthday sex  username
+      await updateAccount({ id: id, ...state.accountInfo }); // birthday sex  username
       Toast.success("修改成功");
       state.showUpdateAccount = false;
       init();
@@ -439,24 +569,37 @@ export default {
     }
     return {
       ...toRefs(state),
+      totalTrainTime,
+      sortedTrainPlans,
+      handleDurationChange,
       handleSaveInfo,
       handleTraining,
       handleCardOpConfirm,
       handlePlanCancel,
       handlePlanConfirm,
-
       getAge,
       getCurrentCardType,
       showUpdate,
       handleUpdateAccountConfirm,
       gotoTrain,
       formatTime,
+      validatePhone,
     };
   },
 };
 </script>
 
 <style lang="less" scoped>
+// 全局变量
+@padding-base: 16px;
+@primary-color: #2563eb;
+@grey-color: #4e5969;
+@light-grey: #f5f7fa;
+@border-color: #e5e6eb;
+@slider-height: 4px;
+@slider-button-size: 16px;
+@slider-active-color: @primary-color;
+
 .botton {
   height: 35px;
   line-height: 35px;
@@ -474,11 +617,7 @@ export default {
     background-color: #1d4ed8;
   }
 }
-@padding-base: 16px;
-@primary-color: #2563eb;
-@grey-color: #4e5969;
-@light-grey: #f5f7fa;
-@border-color: #e5e6eb;
+
 .form-row {
   display: flex;
   align-items: center;
@@ -547,17 +686,16 @@ export default {
 
   .radio-item {
     display: flex;
-
     cursor: pointer;
     font-size: 14px;
     color: #333;
     input[type="radio"] {
       margin-right: 6px;
-
       border: none;
     }
   }
 }
+
 .dialog-content {
   text-align: center;
   padding: 20px 5px;
@@ -634,12 +772,14 @@ export default {
     }
   }
 }
+
 .account_info-wrap {
   max-width: 900px;
   margin: 0 auto;
   padding: 16px;
   background-color: #f5f7fa;
   min-height: 100vh;
+
   .head-warper {
     position: relative;
     width: 100%;
@@ -683,20 +823,24 @@ export default {
   padding: 15px 16px;
   background-color: #fff;
   border-bottom: 1px solid #f0f0f0;
+
   &.last-child {
     border-bottom: none;
   }
+
   label {
     flex: 0 0 100px;
     color: #333;
     font-weight: normal;
   }
+
   .value-wrap {
     flex: 1; /* 占满剩余宽度 */
     display: flex; /* 内部弹性布局，值和箭头分开 */
     align-items: center;
     justify-content: space-between; /* 内容左对齐，箭头右对齐 */
     min-height: 20px; /* 保证空值时也有高度 */
+
     .edit-arrow {
       color: #ccc;
       font-size: 16px;
@@ -704,6 +848,7 @@ export default {
       cursor: pointer;
     }
   }
+
   &:hover {
     background-color: #f8f8f8;
   }
@@ -742,21 +887,32 @@ export default {
     }
   }
 }
-
-// 训练方案区
+.duration-label {
+  font-size: 14px;
+  color: #333;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+// 训练方案区 核心样式优化
 .plan-wrap {
   .item-list {
     margin-bottom: 20px;
-
     .item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 0;
+      padding: 18px 0;
       border-bottom: 1px solid #f0f0f0;
 
+      // 修复布局问题，确保滑块有足够宽度
       .item-left {
         flex: 1;
+        padding-right: 10px;
+
+        .train-type-checkbox {
+          font-size: 14px;
+          display: block;
+        }
       }
 
       .item-right {
@@ -765,33 +921,126 @@ export default {
         gap: 8px;
         font-size: 14px;
         color: #666;
+        flex: 1.5; // 增加右侧宽度占比
+        min-width: 200px;
+      }
+
+      // 滑块容器样式优化
+      .slider-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        min-width: 150px;
+      }
+
+      .slider-value {
+        min-width: 30px;
+        text-align: center;
+        font-size: 12px;
+        color: #333;
+        font-weight: 500;
       }
     }
   }
 
-  .num-ctrl {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  .plan-op-wrap {
+    // 单选框行样式
+    .radio-row {
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
 
-    button {
-      width: 24px;
-      height: 24px;
-      border: 1px solid #dcdfe6;
-      border-radius: 4px;
-      background: #fff;
-      font-size: 14px;
-      cursor: pointer;
+      .radio-label {
+        flex: 0 0 100px;
+        color: #333;
+        font-weight: normal;
+      }
 
-      &:hover {
-        border-color: #409eff;
-        color: #409eff;
+      .radio-group {
+        display: flex;
+        gap: 24px;
+        flex: 1;
+        align-items: center;
+
+        .radio-item {
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          font-size: 14px;
+          position: relative;
+
+          input[type="radio"] {
+            margin-right: 6px;
+            width: 16px;
+            height: 16px;
+            accent-color: @primary-color;
+            cursor: pointer;
+          }
+
+          .radio-text {
+            cursor: pointer;
+          }
+        }
       }
     }
 
-    span {
-      min-width: 30px;
-      text-align: center;
+    // 滑块行样式
+    .slider-row {
+      padding: 12px 0;
+
+      .radio-label {
+        flex: 0 0 100px;
+        color: #333;
+        font-weight: normal;
+      }
+
+      .full-width {
+        width: 100%;
+        flex: 1;
+      }
+    }
+  }
+}
+
+// 自定义滑块样式 - 修复圆点过大和无法滑动问题
+:deep(.custom-slider) {
+  // 滑块轨道样式
+  .van-slider__track {
+    height: @slider-height;
+    border-radius: @slider-height / 2;
+    background-color: @slider-active-color;
+  }
+
+  // 滑块背景样式
+  .van-slider__bar {
+    height: @slider-height;
+    border-radius: @slider-height / 2;
+    background-color: #e5e6eb;
+  }
+
+  // 滑块按钮样式（核心：缩小圆点）
+  .van-slider__button {
+    width: @slider-button-size;
+    height: @slider-button-size;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    border: 2px solid @slider-active-color;
+    // 修复点击区域问题
+    &:active {
+      transform: scale(1.1);
+    }
+  }
+
+  // 禁用状态样式
+  &.van-slider--disabled {
+    .van-slider__track {
+      background-color: #c0c4cc;
+    }
+
+    .van-slider__button {
+      background-color: #f5f5f5;
+      border-color: #c0c4cc;
     }
   }
 }

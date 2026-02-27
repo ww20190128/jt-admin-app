@@ -15,12 +15,14 @@
         />
       </div>
       <div class="input-group">
+        <!-- 显示密码 -->
         <input
-          type="password"
+          :type="showPwd ? 'text' : 'password'"
           id="password"
           v-model="ruleForm.password"
           placeholder="请输入密码"
         />
+      
       </div>
       <button class="login-btn" @click="handleLogin">登录</button>
     </div>
@@ -32,13 +34,14 @@ import { reactive, toRefs, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useStore } from "@/store";
 
-import { Toast } from "vant";
+import { Toast, VanIcon } from "vant";
 import logoImg from "@/assets/images/avatar.png";
 import { userLogin } from "@/api/admin.js";
 import PassWordUtils from "@/utils/passWordUtils.js";
 
 export default {
   name: "login",
+  components: { VanIcon },
   setup() {
     const store = useStore();
     const router = useRouter();
@@ -53,6 +56,7 @@ export default {
         userName: [{ required: true, message: "请输入账号", trigger: "blur" }],
         password: [{ required: true, message: "请输入密码", trigger: "blur" }],
       },
+      showPwd: false, // 是否显示密码
     });
     // 登录处理
     async function handleLogin() {
