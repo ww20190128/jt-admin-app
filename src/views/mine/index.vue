@@ -140,7 +140,7 @@ export default {
       const hours = String(date.getHours()).padStart(2, "0");
       const minutes = String(date.getMinutes()).padStart(2, "0");
 
-      return `${year}/${month}/${day} ${hours}:${minutes}`;
+      return `${year}-${month}-${day} ${hours}:${minutes}:${String(date.getSeconds()).padStart(2, "0")}`;
     };
     // 用户信息
     const userInfo = computed(() => store.getters.userInfo);

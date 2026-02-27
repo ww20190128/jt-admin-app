@@ -94,10 +94,23 @@ export default {
 };
 </script>
 <style lang="less" scoped>
+// 极简白色基调配色体系
+@white-primary: #ffffff;     // 主纯白
+@white-light: #f9fafb;       // 极浅灰背景
+@white-border: #f0f0f0;      // 浅灰边框
+@white-hover: #f5f5f5;       // hover浅灰
+@accent-light: #e8f4f8;      // 淡蓝点缀
+@accent-main: #88b0c9;       // 主淡蓝（交互）
+@text-primary: #333333;      // 深灰文字（替代纯黑）
+@text-secondary: #666666;    // 中灰文字
+@text-tertiary: #999999;     // 浅灰文字
+@status-normal: #94c9b1;     // 浅绿（签约）
+@status-abnormal: #e9b4b4;   // 浅红（解约）
+
 .page-header {
   font-size: 32px;
   font-weight: 600;
-  color: #0a2463;
+  color: @text-primary;
   margin-bottom: 20px;
 }
 
@@ -107,19 +120,22 @@ export default {
 }
 
 .item {
-  background: #fdf0c4;
+  background: @white-primary; // 纯白主背景
   backdrop-filter: blur(10px);
   border-radius: 12px;
   padding: 8px 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid @white-border; // 极简浅灰边框
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03); // 极淡阴影
   transition: all 0.3s ease;
   margin-bottom: 15px;
+  position: relative; // 确保状态标签定位
   &:active {
     transform: scale(0.98);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    background: @white-hover;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   }
 }
 
@@ -131,7 +147,8 @@ export default {
     height: 80px;
     border-radius: 50%;
     overflow: hidden;
-    border: 2px solid #e0efff;
+    border: 2px solid @white-border; // 浅灰边框
+    background: @white-light; // 极浅灰底
     .van-image {
       width: 100%;
       height: 100%;
@@ -144,7 +161,7 @@ export default {
     .agent-name {
       font-size: 17px;
       font-weight: 600;
-      color: #0a2463;
+      color: @text-primary;
     }
     .field-list-wrap {
       margin-top: 10px;
@@ -153,21 +170,25 @@ export default {
         line-height: 20px;
         .field-name {
           font-size: 12px;
-          color: #64748b;
+          color: @text-secondary;
           width: 40px;
         }
         .field-value {
           font-size: 12px;
-          color: #64748b;
+          color: @text-secondary;
         }
         .field-button {
           margin-left: 5px;
-          padding: 0px 2px;
-          background-color: #4a9cf3;
-          color: #fff;
+          padding: 0px 4px;
+          background-color: @accent-main; // 淡蓝充值按钮
+          color: #ffffff;
           font-size: 12px;
           border-radius: 5px;
           cursor: pointer;
+          transition: all 0.2s ease;
+          &:hover {
+            background-color: darken(@accent-main, 8%);
+          }
         }
       }
     }
@@ -185,10 +206,10 @@ export default {
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,
-    #007bff 0%,
-    #007bff calc(var(--percent) * 1%),
-    #e0efff calc(var(--percent) * 1%),
-    #e0efff 100%
+    @accent-main 0%,
+    @accent-main calc(var(--percent) * 1%),
+    @accent-light calc(var(--percent) * 1%),
+    @accent-light 100%
   );
   display: flex;
   align-items: center;
@@ -201,7 +222,7 @@ export default {
     width: 70px;
     height: 70px;
     border-radius: 50%;
-    background: #fff;
+    background: @white-primary; // 纯白内圆
   }
 
   .commission-text {
@@ -214,14 +235,14 @@ export default {
 
   .commission-label {
     font-size: 12px;
-    color: #bbc0c1;
+    color: @text-tertiary;
     margin-bottom: 4px;
   }
 
   .commission-value {
     font-size: 24px;
     font-weight: 700;
-    color: #3d3d0e;
+    color: @text-primary; // 深灰数值，保持简洁
   }
 }
 
@@ -229,19 +250,24 @@ export default {
   position: absolute;
   bottom: -5px;
   left: -8px;
-  padding: 2px 5px;
+  padding: 2px 8px;
   border-radius: 0px 12px 0 12px;
   font-size: 12px;
   font-weight: 500;
-  color: #fff;
+  color: @text-primary; // 深灰文字
   z-index: 2;
+  border: 1px solid @white-border; // 浅灰边框
 }
 
+// 签约状态 - 浅绿底（低饱和）
 .status-normal {
-  background: #007bff;
+  background: #f0f8f4;
+  color: #5a9277;
 }
 
+// 解约状态 - 浅红底（低饱和）
 .status-abnormal {
-  background: #ff4d4f;
+  background: #fdf2f2;
+  color: #a76868;
 }
 </style>

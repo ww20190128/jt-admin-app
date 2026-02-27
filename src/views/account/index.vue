@@ -33,6 +33,13 @@
         </div>
 
         <div class="right-list">
+          <!-- 空列表提示 -->
+          <div class="empty-state" v-if="accountList.length === 0 && !loading">
+            <div class="empty-icon">📄</div>
+            <div class="empty-text">暂无相关用户数据</div>
+            <div class="empty-tip">请更换筛选条件或搜索关键词</div>
+          </div>
+
           <!-- 用户列表项 -->
           <div
             class="item"
@@ -40,39 +47,55 @@
             :key="item.id"
             @click="handleItem(item)"
           >
-            <div class="item-info-wrap">
-              <div class="left-warp">
-                <p class="userName">{{ item.username }}</p>
-                <p class="account">{{ item?.account }}</p>
+            <div class="item-header">
+              <div class="user-info">
+                <h3 class="userName">{{ item.username }}</h3>
+                <p class="account">{{ item?.account || "未绑定手机号" }}</p>
               </div>
-              <div class="right-warp">
-                <!-- 卡类型圆形标签 - 修复类名绑定 -->
+              <!-- 卡类型标签 - 优化为胶囊+圆形组合 -->
+              <div class="card-tag-group">
                 <div
                   class="account-type"
                   :class="[
                     item?.typeId ? `type-${item.typeId}` : 'type-default',
                   ]"
                 >
-                  <div class="name">{{ getTypeName(item?.typeId) }}</div>
-                </div>
-                <!-- 到期时间 -->
-                <div class="expired-time">
-                  <!-- <p class="label">到期时间</p>
-                  <p class="value">{{ formatTime(item?.expiredAt) }}</p> -->
+                  <span class="name">{{ getTypeName(item?.typeId) }}</span>
                 </div>
               </div>
             </div>
 
-            <div class="bottom-wrap">
-              有效期:{{ formatTime(item?.createdAt) }} -
-              {{ formatTime(item?.expiredAt) }}
+            <div class="item-body">
+              <div class="time-info">
+                <span class="label">到期时间：</span>
+
+                <span class="value expired">{{
+                  formatTime(item?.expiredAt)
+                }}</span>
+              </div>
+            </div>
+
+            <!-- 状态标签 - 新增到期提醒 -->
+            <div class="item-footer">
+              <div
+                class="status-tag"
+                :class="getStatusClass(item?.expiredAt)"
+                v-if="item?.expiredAt"
+              >
+                {{ getStatusText(item?.expiredAt) }}
+              </div>
             </div>
           </div>
 
-          <div class="bottom">
+          <!-- 加载/无更多 -->
+          <div class="load-more">
             <van-loading v-show="loading" size="18px">加载中...</van-loading>
-            <div class="none" v-show="nomore">没有更多用户了</div>
+            <div class="no-more" v-show="nomore">
+              <span class="icon">✓</span>
+              <span class="text">已加载全部用户</span>
+            </div>
           </div>
+
           <CopyRight />
         </div>
       </div>
@@ -87,6 +110,7 @@ import SearchNavBar from "@/components/SearchNavBar";
 import { getMembersList } from "@/api/admin";
 import { useScrollBottom } from "@/hooks/useScroll";
 import CopyRight from "@/components/CopyRight";
+
 export default {
   name: "account",
   components: {
@@ -135,19 +159,17 @@ export default {
       }
     });
 
-    // 格式化时间
+    // 格式化时间（简化显示）
     const formatTime = (time) => {
-      if (!time) return "暂无";
+      if (!time) return "未设置";
       const date = new Date(time);
       if (isNaN(date.getTime())) return "格式错误";
 
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, "0");
       const day = String(date.getDate()).padStart(2, "0");
-      const hours = String(date.getHours()).padStart(2, "0");
-      const minutes = String(date.getMinutes()).padStart(2, "0");
 
-      return `${year}/${month}/${day} ${hours}:${minutes}`;
+      return `${year}/${month}/${day}`;
     };
 
     // 获取卡类型名称
@@ -155,7 +177,33 @@ export default {
       const matchItem = state.classifyList.find((item) => {
         return String(item.id) === String(typeId);
       });
-      return matchItem?.name || "未知";
+      return matchItem?.name || "未知卡型";
+    };
+
+    // 新增：获取状态文本
+    const getStatusText = (expiredAt) => {
+      if (!expiredAt) return "未设置有效期";
+
+      const now = new Date();
+      const expireDate = new Date(expiredAt);
+      const diffDays = Math.ceil((expireDate - now) / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 0) return "已过期";
+      if (diffDays <= 7) return `即将过期（${diffDays}天）`;
+      return "正常使用中";
+    };
+
+    // 新增：获取状态样式类
+    const getStatusClass = (expiredAt) => {
+      if (!expiredAt) return "status-default";
+
+      const now = new Date();
+      const expireDate = new Date(expiredAt);
+      const diffDays = Math.ceil((expireDate - now) / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 0) return "status-expired";
+      if (diffDays <= 7) return "status-warning";
+      return "status-normal";
     };
 
     function onNavSearch() {
@@ -211,7 +259,7 @@ export default {
       onSearch();
       setSearch(current.id);
     }
-    // 跳转到详情
+
     function handleItem(item) {
       window.localStorage.setItem(
         "account_info_" + item.id,
@@ -232,17 +280,13 @@ export default {
       getList();
     }
 
+    // 移除重复的触底监听
     useScrollBottom(() => {
-      if (state.nomore) return;
+      if (state.nomore || state.loading) return;
       state.query.pageIndex++;
       getList();
     });
-    // 触底
-    useScrollBottom(() => {
-      if (state.nomore) return;
-      state.query.pageIndex++;
-      getList();
-    });
+
     return {
       handleItem,
       handleClassifyChange,
@@ -250,6 +294,8 @@ export default {
       onNavSearch,
       formatTime,
       getTypeName,
+      getStatusText, // 新增
+      getStatusClass, // 新增
       ...toRefs(state),
     };
   },
@@ -257,8 +303,19 @@ export default {
 </script>
 
 <style lang="less" scoped>
+// 全局变量
+@primary-color: #6ea9fb;
+@success-color: #48bb78;
+@warning-color: #ed8936;
+@danger-color: #e53e3e;
+@default-color: #718096;
+@light-gray: #f5f7fa;
+@border-color: #e8e8e8;
+@card-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+@card-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.1);
+
 .account-warper {
-  background-color: #f5f7fa;
+  background-color: @light-gray;
   position: relative;
   width: 100%;
   min-height: 100vh;
@@ -300,198 +357,301 @@ export default {
 
 .content {
   display: flex;
-  background-color: #f5f7fa;
+  background-color: @light-gray;
 
+  // 左侧侧边栏
+  .left-scroll-warper {
+    .scroll-content {
+      background-color: #fff;
+      padding-top: 15px;
+      border-top-right-radius: 15px !important;
+      box-shadow: 0px 0px 4px @border-color;
+      position: fixed;
+      top: 50px;
+      width: 90px;
+      height: 100%;
+
+      .van-sidebar-item {
+        z-index: 99;
+        height: 50px;
+        line-height: 1;
+        text-align: center;
+        color: #333;
+        background-color: #fff;
+        transition: all 0.2s ease;
+      }
+
+      :deep(.van-sidebar-item__text) {
+        font-size: 14px !important;
+      }
+
+      .van-sidebar-item--select {
+        font-weight: 600;
+        color: #fff;
+        margin-right: 5px;
+        background-color: @primary-color;
+        border-top-right-radius: 20px;
+        border-bottom-right-radius: 20px;
+
+        &::before {
+          height: 100%;
+          width: 4px;
+          background-color: #ff9800;
+        }
+      }
+    }
+  }
+
+  // 右侧内容区
   .right-content-list {
-    background-color: #f5f7fa;
+    background-color: @light-gray;
     margin-top: 37px;
     width: calc(100% - 90px);
     padding: 0 8px;
 
     .right-list {
-      .bottom {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 8px 0;
-        margin-top: 10px;
+      padding: 8px 0;
 
-        .none {
-          color: #969799;
+      // 空状态样式
+      .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: @default-color;
+
+        .empty-icon {
+          font-size: 48px;
+          margin-bottom: 16px;
+          opacity: 0.5;
+        }
+
+        .empty-text {
+          font-size: 16px;
+          margin-bottom: 8px;
+          font-weight: 500;
+        }
+
+        .empty-tip {
           font-size: 14px;
+          opacity: 0.7;
         }
       }
 
+      // 列表项样式
       .item {
         cursor: pointer;
-        padding: 12px 12px 20px 12px;
-        border-radius: 12px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        padding: 16px;
+        border-radius: 16px;
+        box-shadow: @card-shadow;
         background: #fff;
-        margin: 12px 8px 0;
+        margin: 0 8px 16px;
+        border: 1px solid #fff;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 
-        transition: all 0.2s ease;
-        border: 1px solid #f5f5f5;
-
-        // 悬浮/点击效果
+        // 悬浮效果
         &:hover {
           transform: translateY(-2px);
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-          border-color: #e8f4f8;
+          box-shadow: @card-shadow-hover;
+          border-color: @primary-color;
         }
-        position: relative;
-        .bottom-wrap {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          width: 100%;
-          height: 25px;
-          line-height: 25px;
-          text-align: center;
-          border-radius: 0px 0px 12px 12px;
-          font-size: 12px;
-          background-color: #ff5d7d;
-          opacity: 0.7;
-          color: #fff;
+
+        // 点击效果
+        &:active {
+          transform: translateY(0);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
-        .item-info-wrap {
+
+        // 列表项头部
+        .item-header {
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          width: 100%;
-          // 左侧信息区域
-          .left-warp {
+          margin-bottom: 12px;
+          padding-bottom: 12px;
+          border-bottom: 1px solid @border-color;
+
+          .user-info {
             flex: 1;
-            overflow: hidden;
-            padding-right: 12px;
+
             .userName {
               font-weight: 600;
-              font-size: 15px;
+              font-size: 16px;
               color: #333;
-              text-align: left;
-              white-space: nowrap;
-              text-overflow: ellipsis;
-              overflow: hidden;
               margin-bottom: 4px;
               line-height: 1.4;
             }
+
             .account {
-              color: #969799;
-              font-size: 12px;
+              color: @default-color;
+              font-size: 13px;
               line-height: 1.4;
-              white-space: nowrap;
-              text-overflow: ellipsis;
-              overflow: hidden;
-              margin-bottom: 4px;
             }
           }
 
-          // 右侧卡类型+到期时间区域
-          .right-warp {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-width: 80px;
-            // 圆形卡类型标签 - 确保基础样式始终生效
+          // 卡类型标签
+          .card-tag-group {
             .account-type {
-              width: 60px;
-              height: 60px;
-              border-radius: 50%;
-              display: flex;
+              min-width: 64px;
+              height: 28px;
+              line-height: 28px;
+              border-radius: 14px;
+              display: inline-flex;
               align-items: center;
               justify-content: center;
-              position: relative;
-              margin-bottom: 5px;
-              // 默认背景色（确保没有匹配类型时也有样式）
-              background-color: #f5f5f5;
+              padding: 0 12px;
+              background-color: @light-gray;
 
-              // 内层白色圆 - 确保显示
-              &::before {
-                content: "";
-                position: absolute;
-                width: 50px;
-                height: 50px;
-                border-radius: 50%;
-                background: #fff !important; // 强制显示
-              }
-
-              // 卡类型文字 - 确保显示
               .name {
-                position: relative;
-
-                font-size: 11px;
+                font-size: 12px;
                 font-weight: 500;
-                text-align: center;
-                line-height: 1.2;
-                padding: 0 4px;
-                color: #718096; // 默认文字颜色
+                color: @default-color;
               }
 
-              // 不同卡类型的配色 - 修复类名匹配
+              // 不同卡类型配色
               &.type-0 {
                 // 免费
-                background-color: #e8f4f8 !important;
+                background-color: #e8f4f8;
                 .name {
-                  color: #4299e1 !important;
+                  color: #4299e1;
                 }
               }
               &.type-3 {
                 // 七日卡
-                background-color: #f0f8fb !important;
+                background-color: #f0f8fb;
                 .name {
-                  color: #38b2ac !important;
+                  color: #38b2ac;
                 }
               }
               &.type-99 {
                 // 体验卡
-                background-color: #fef7fb !important;
+                background-color: #fef7fb;
                 .name {
-                  color: #9f7aea !important;
+                  color: #9f7aea;
                 }
               }
               &.type-101 {
                 // 季卡
-                background-color: #f5fafe !important;
+                background-color: #f5fafe;
                 .name {
-                  color: #48bb78 !important;
+                  color: #48bb78;
                 }
               }
               &.type-102 {
                 // 半年卡
-                background-color: #faf0f5 !important;
+                background-color: #faf0f5;
                 .name {
-                  color: #ed8936 !important;
+                  color: #ed8936;
                 }
               }
               &.type-103 {
                 // 年卡
-                background-color: #f8f8f8 !important;
+                background-color: #f8f8f8;
                 .name {
-                  color: #e53e3e !important;
+                  color: #e53e3e;
                 }
               }
               &.type-104 {
                 // 年卡Plus
-                background-color: #f7f3e9 !important;
+                background-color: #f7f3e9;
                 .name {
-                  color: #4299e1 !important;
-                }
-              }
-              &.type--1 {
-                // 全部
-                background-color: #f5f5f5 !important;
-                .name {
-                  color: #718096 !important;
+                  color: #4299e1;
                 }
               }
               &.type-default {
-                // 默认样式
-                background-color: #f5f5f5 !important;
+                // 默认
+                background-color: #f5f5f5;
                 .name {
-                  color: #718096 !important;
+                  color: #718096;
                 }
               }
             }
+          }
+        }
+
+        // 列表项主体
+        .item-body {
+          margin-bottom: 12px;
+
+          .time-info {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+            font-size: 14px;
+
+            .label {
+              color: @default-color;
+              font-weight: 500;
+            }
+
+            .value {
+              color: #333;
+            }
+
+            .expired {
+              color: @primary-color;
+              font-weight: 500;
+            }
+
+            .separator {
+              color: @border-color;
+              margin: 0 4px;
+            }
+          }
+        }
+
+        // 列表项底部（状态标签）
+        .item-footer {
+          .status-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+
+            &.status-normal {
+              background-color: rgba(72, 187, 120, 0.1);
+              color: @success-color;
+            }
+
+            &.status-warning {
+              background-color: rgba(237, 137, 54, 0.1);
+              color: @warning-color;
+            }
+
+            &.status-expired {
+              background-color: rgba(229, 62, 62, 0.1);
+              color: @danger-color;
+            }
+
+            &.status-default {
+              background-color: @light-gray;
+              color: @default-color;
+            }
+          }
+        }
+      }
+
+      // 加载/无更多样式
+      .load-more {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 0;
+        color: @default-color;
+        font-size: 14px;
+
+        .no-more {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          .icon {
+            font-size: 16px;
+            color: @success-color;
+          }
+
+          .text {
+            opacity: 0.8;
           }
         }
       }
@@ -499,47 +659,7 @@ export default {
   }
 }
 
-.left-scroll-warper {
-  .scroll-content {
-    background-color: #fff;
-    padding-top: 15px;
-    border-top-right-radius: 15px !important;
-    box-shadow: 0px 0px 4px #e8e8e8;
-    position: fixed;
-    top: 50px;
-    width: 90px;
-    height: 100%;
-
-    .van-sidebar-item {
-      z-index: 99;
-      height: 50px;
-      line-height: 1;
-      text-align: center;
-      color: #333;
-      background-color: #fff;
-    }
-
-    :deep(.van-sidebar-item__text) {
-      font-size: 14px !important;
-    }
-
-    .van-sidebar-item--select {
-      font-weight: bold;
-      color: #fff;
-      margin-right: 5px;
-      background-color: #6ea9fb;
-      border-top-right-radius: 10px;
-      border-bottom-right-radius: 10px;
-
-      &::before {
-        height: 100%;
-        width: 4px;
-        background-color: rgba(255, 152, 0, 1);
-      }
-    }
-  }
-}
-
+// 下拉菜单样式优化
 :deep(.van-dropdown-menu) {
   .van-ellipsis {
     font-size: 14px;
@@ -547,6 +667,7 @@ export default {
 
   .van-dropdown-menu__bar {
     box-shadow: none;
+    background-color: transparent;
   }
 
   .van-dropdown-item--down {
@@ -555,7 +676,8 @@ export default {
     left: unset;
 
     :deep(.van-popup) {
-      border-bottom: 1px solid #969799;
+      border-bottom: 1px solid @border-color;
+      border-radius: 8px 8px 0 0;
     }
   }
 
@@ -563,6 +685,9 @@ export default {
     justify-content: flex-end;
     padding: 0 12px;
     position: relative;
+    background-color: #fff;
+    border-radius: 8px;
+    margin-right: 8px;
 
     &::before {
       content: "排序";
@@ -571,7 +696,7 @@ export default {
       top: 50%;
       transform: translateY(-50%);
       font-size: 14px;
-      color: #969799;
+      color: @default-color;
     }
   }
 }
