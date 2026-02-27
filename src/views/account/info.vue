@@ -8,6 +8,7 @@
         <div @click="gotoTrain" class="botton">训练设置</div>
       </div>
     </div>
+
     <!-- 1. 用户详情区 -->
     <div class="section user-info-section" v-if="accountInfo">
       <div class="section-title">用户详情</div>
@@ -69,12 +70,13 @@
       </div>
     </div>
 
-    <!-- 3. 训练方案区 -->
+    <!-- 3. 训练方案区 - 核心仿可滑动滑块重构 -->
     <div class="section plan-section">
       <h3 class="section-title">训练方案</h3>
       <p class="duration-label">时长单位：分</p>
       <div class="plan-wrap">
         <div class="item-list">
+          <!-- 仿可滑动滑块：简化DOM结构，提升交互优先级 -->
           <div
             class="item"
             v-for="(item, index) in sortedTrainPlans"
@@ -83,29 +85,30 @@
             <div class="item-left">
               <van-checkbox
                 v-model="item.checked"
-                :label="trainTypeMap[item.course_id] || '未知训练类型'"
                 class="train-type-checkbox"
+                @change="handleCheckboxChange(item)"
               >
-                {{ trainTypeMap[item.course_id] || "未知训练类型" }}
+                {{ getTrainTypeName(item.course_id) }}
               </van-checkbox>
             </div>
             <div class="item-right">
-              <!-- 修复滑块容器宽度问题 -->
-              <div class="slider-container">
+              <!-- 仿可滑动滑块：独立容器，无嵌套阻塞 -->
+              <div class="slider-wrap">
+                <!-- 核心：原生可滑动滑块结构，移除多余属性 -->
                 <van-slider
                   v-model="item.course_duration"
-                  :min="0"
-                  :max="60"
-                  :step="1"
-                  @change="handleDurationChange(item)"
-                  class="custom-slider"
+                  min="0"
+                  max="60"
+                  step="1"
+                  class="train-slider"
                   :disabled="!item.checked"
                 />
-                <span class="slider-value">{{ item.course_duration }}</span>
+                <span class="slider-num">{{ item.course_duration }}</span>
               </div>
             </div>
           </div>
         </div>
+
         <div class="plan-op-wrap">
           <!-- 遮挡设置 -->
           <div class="form-row radio-row">
@@ -140,6 +143,7 @@
               </label>
             </div>
           </div>
+
           <!-- 集合散开模式 -->
           <div class="form-row radio-row">
             <label class="radio-label">集合散开模式</label>
@@ -173,21 +177,23 @@
               </label>
             </div>
           </div>
-          <!-- 总训练时长 -->
+
+          <!-- 总训练时长 - 仿可滑动滑块实现 -->
           <div class="form-row slider-row">
             <label class="radio-label">总时长</label>
-            <div class="slider-container full-width">
+            <div class="slider-wrap full-slider">
               <van-slider
                 v-model="totalTrainTime"
-                :min="0"
-                :max="60"
-                :step="1"
-                class="custom-slider"
+                min="0"
+                max="60"
+                step="1"
+                class="train-slider"
               />
-              <p class="slider-value total">{{ totalTrainTime }} 分钟</p>
+              <span class="slider-num">{{ totalTrainTime }} 分钟</span>
             </div>
           </div>
         </div>
+
         <div class="btn-group">
           <button class="btn btn-secondary" @click="handlePlanCancel">
             取消
@@ -211,11 +217,12 @@
       </div>
     </div>
   </div>
+
+  <!-- 修改账号弹窗 -->
   <BaseDialog v-model:show="showUpdateAccount" :showConfirmButton="false">
     <div class="dialog-content">
       <div class="title">修改账号</div>
       <div class="content">
-        <!-- 姓名 -->
         <div class="form-row">
           <label>姓名</label>
           <input
@@ -225,8 +232,6 @@
             class="form-input"
           />
         </div>
-
-        <!-- 手机号（带格式验证） -->
         <div class="form-row">
           <label>手机号</label>
           <input
@@ -238,8 +243,6 @@
           />
           <span v-if="phoneError" class="error-tip">{{ phoneError }}</span>
         </div>
-
-        <!-- 性别（radio方式） -->
         <div class="form-row">
           <label>性别</label>
           <div class="radio-group">
@@ -249,8 +252,7 @@
                 v-model="accountInfo.sex"
                 value="0"
                 name="sex"
-              />
-              未知
+              />未知
             </label>
             <label class="radio-item">
               <input
@@ -258,8 +260,7 @@
                 v-model="accountInfo.sex"
                 value="1"
                 name="sex"
-              />
-              男
+              />男
             </label>
             <label class="radio-item">
               <input
@@ -267,13 +268,10 @@
                 v-model="accountInfo.sex"
                 value="2"
                 name="sex"
-              />
-              女
+              />女
             </label>
           </div>
         </div>
-
-        <!-- 年龄（日期选择器） -->
         <div class="form-row">
           <label>出生日期</label>
           <input
@@ -283,7 +281,6 @@
             placeholder="请选择出生日期"
           />
         </div>
-
         <div class="form-row">
           <label>重置密码</label>
           <input
@@ -312,6 +309,7 @@ import { Toast, VanSlider, VanCheckbox } from "vant";
 import { getPlan, setPlan, trainlog } from "@/api/admin";
 import BaseDialog from "@/components/BaseDialog";
 import { updateAccount } from "@/api/admin";
+
 export default {
   name: "account_info",
   components: {
@@ -322,8 +320,9 @@ export default {
   setup() {
     const router = useRouter();
     const route = useRoute();
-
     const { id } = route.query;
+
+    // 核心：仿可滑动滑块的状态管理，简化逻辑
     const state = reactive({
       accountInfo: {},
       classifyList: [
@@ -336,65 +335,62 @@ export default {
         { id: 103, name: "年卡" },
         { id: 104, name: "年卡Plus" },
       ],
-      trainTypeMap: {
-        1: "刺激训练",
-        2: "变频红光",
-        3: "Gabor视觉",
-        4: "拥挤",
-        5: "精细",
-        8: "旁中心",
-        9: "脱抑制",
-        10: "同时视觉",
-        11: "双眼融合",
-        12: "立体视觉",
-        13: "眼肌",
-      },
+
+      cats: [
+        { label: "刺激训练", value: 1 },
+        { label: "变频红光", value: 2 },
+        { label: "Gabor视觉", value: 3 },
+        { label: "拥挤", value: 5 },
+        { label: "精细", value: 6 },
+        { label: "脱抑制", value: 7 },
+        { label: "旁中心", value: 8 },
+        { label: "同时视觉", value: 9 },
+        { label: "双眼融合", value: 10 },
+        { label: "立体视觉", value: 11 },
+        { label: "晶体调节", value: 12 },
+        { label: "眼肌", value: 13 },
+      ],
       planSettings: {
         show_eye: 1,
         binocular_model: 1,
         max_train_time: 0,
         train_plan: [],
       },
-      // 训练记录
       trainlog: [],
-      showUpdateAccount: false, // 显示修改账号信息
-      phoneError: "", // 手机号错误提示
+      showUpdateAccount: false,
+      phoneError: "",
     });
 
-    // 计算属性：总训练时长（秒转分钟，限制0-60）
+    // 总训练时长计算 - 仿可滑动滑块的简洁实现
     const totalTrainTime = computed({
       get() {
-        const minutes = Math.floor(state.planSettings.max_train_time / 60);
-        return Math.min(Math.max(minutes, 0), 60);
+        return Math.min(
+          Math.max(Math.floor(state.planSettings.max_train_time / 60), 0),
+          60
+        );
       },
       set(val) {
         state.planSettings.max_train_time = val * 60;
       },
     });
 
-    // 计算属性：排序训练计划（已设置在前，未设置在后）
+    // 训练计划排序 - 保持原有逻辑
     const sortedTrainPlans = computed(() => {
-      // 1. 已设置的训练计划
       const setPlans = state.planSettings.train_plan.map((item) => ({
         ...item,
         checked: true,
-        // 转换秒为分钟
         course_duration: Math.min(
           Math.max(Math.floor(item.course_duration / 60), 0),
           60
         ),
       }));
 
-      // 2. 所有训练类型ID
-      const allCourseIds = Object.keys(state.trainTypeMap).map(Number);
-      // 已设置的训练类型ID
+      const allCourseIds = state.cats.map((cat) => cat.value);
       const setCourseIds = setPlans.map((item) => item.course_id);
-      // 未设置的训练类型ID
       const unsetCourseIds = allCourseIds.filter(
         (id) => !setCourseIds.includes(id)
       );
 
-      // 3. 构建未设置的训练计划
       const unsetPlans = unsetCourseIds.map((course_id, index) => ({
         id: `unset_${index}`,
         course_id,
@@ -405,35 +401,25 @@ export default {
         checked: false,
       }));
 
-      // 4. 合并：已设置 + 未设置
       return [...setPlans, ...unsetPlans];
     });
 
-    // 训练时长变化处理（限制0-60）
-    const handleDurationChange = (item) => {
-      item.course_duration = Math.min(Math.max(item.course_duration, 0), 60);
+    // 仿可滑动滑块：复选框变更处理
+    const handleCheckboxChange = (item) => {
+      // 勾选时默认给1分钟，避免0值无感知
+      if (item.checked && item.course_duration === 0) {
+        item.course_duration = 1;
+      }
     };
 
-    onMounted(async () => {
-      if (!id) {
-        Toast.fail("缺少ID");
-        return;
-      }
-      await init();
-    });
-
-    // 手机号格式验证
+    // 手机号验证
     const validatePhone = () => {
-      const { account } = state.accountInfo;
-      // 清空之前的错误提示
       state.phoneError = "";
-
+      const { account } = state.accountInfo;
       if (!account) {
         state.phoneError = "手机号不能为空";
         return false;
       }
-
-      // 手机号正则验证（11位数字，以1开头）
       const phoneReg = /^1[3-9]\d{9}$/;
       if (!phoneReg.test(account)) {
         state.phoneError = "请输入正确的手机号格式";
@@ -447,89 +433,56 @@ export default {
       if (!time) return "暂无";
       const date = new Date(time);
       if (isNaN(date.getTime())) return "格式错误";
-
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, "0");
       const day = String(date.getDate()).padStart(2, "0");
       const hours = String(date.getHours()).padStart(2, "0");
       const minutes = String(date.getMinutes()).padStart(2, "0");
-
       return `${year}/${month}/${day} ${hours}:${minutes}`;
     };
+
     // 计算年龄
     const getAge = () => {
       if (!state.accountInfo.birthday) return "";
-      const birthYear = new Date(state.accountInfo.birthday).getFullYear();
-      const currentYear = new Date().getFullYear();
-      return currentYear - birthYear;
+      return (
+        new Date().getFullYear() -
+        new Date(state.accountInfo.birthday).getFullYear()
+      );
     };
-    // 获取当前卡类型
+
+    // 获取卡类型
     const getCurrentCardType = () => {
-      const cardTypeId = state.accountInfo.typeId;
-      const card = state.classifyList.find((c) => c.id === cardTypeId);
+      const card = state.classifyList.find(
+        (c) => c.id === state.accountInfo.typeId
+      );
       return card ? card.name : "未知";
     };
 
-    // 初始化页面数据
-    async function init() {
-      // 1. 获取用户详情
+    // 初始化
+    const init = async () => {
+      if (!id) {
+        Toast.fail("缺少ID");
+        return;
+      }
+      // 获取用户信息
       const accountInfo = JSON.parse(
         window.localStorage.getItem("account_info_" + id)
       );
       state.accountInfo = accountInfo;
-      console.log("accountInfo:", accountInfo);
-
-      // 2. 获取训练方案
+      // 获取训练方案
       const { data } = await getPlan({ id: 10254 });
       state.planSettings = data;
-
-      // 获取训练记录
-      const { data1 } = await trainlog({ id: 10254 });
-      state.trainlog = data1.list;
-    }
-
-    // 保存用户信息
-    async function handleSaveInfo() {
-      try {
-        await updateUserInfo({ id: userId, ...state.accountInfo });
-        Toast.success("保存成功");
-      } catch (err) {
-        Toast.fail("保存失败");
-      }
-    }
-
-    // 暂停训练
-    function handleTraining() {
-      state.accountInfo.status = "暂停";
-      Toast("已切换为暂停状态");
-    }
-
-    // 卡操作确认
-    async function handleCardOpConfirm() {
-      try {
-        await operateCard({
-          userId,
-          type: state.cardOp.type,
-          targetCard: state.cardOp.targetCard,
-        });
-        Toast.success("卡操作成功");
-        // 刷新用户信息
-        initPageData();
-      } catch (err) {
-        Toast.fail("卡操作失败");
-      }
-    }
+    };
 
     // 训练方案取消
-    function handlePlanCancel() {
-      init(); // 重置为初始数据
+    const handlePlanCancel = () => {
+      init();
       Toast("已重置方案");
-    }
+    };
 
     // 训练方案确认
-    async function handlePlanConfirm() {
+    const handlePlanConfirm = async () => {
       try {
-        // 转换训练时长为秒
         const submitPlan = sortedTrainPlans.value
           .map((item) => ({
             ...item,
@@ -546,258 +499,102 @@ export default {
       } catch (err) {
         Toast.fail("方案保存失败");
       }
-    }
+    };
 
-    function showUpdate() {
+    // 显示修改弹窗
+    const showUpdate = () => {
       state.showUpdateAccount = true;
-    }
-    // 确认修改账号信息
-    async function handleUpdateAccountConfirm() {
-      await updateAccount({ id: id, ...state.accountInfo }); // birthday sex  username
+    };
+
+    // 确认修改账号
+    const handleUpdateAccountConfirm = async () => {
+      if (!validatePhone()) return;
+      await updateAccount({ id: id, ...state.accountInfo });
       Toast.success("修改成功");
       state.showUpdateAccount = false;
       init();
-    }
-    // 跳转到训练设置页面
-    function gotoTrain() {
+    };
+
+    // 跳转到训练设置
+    const gotoTrain = () => {
       router.push({
         path: "/account/trainSettings",
-        query: {
-          id: id,
-        },
+        query: { id: id },
       });
-    }
+    };
+
+    onMounted(() => {
+      init();
+    });
+    const getTrainTypeName = (course_id) => {
+      const cat = state.cats.find((c) => c.value === course_id);
+      return cat ? cat.label : "未知";
+    };
     return {
       ...toRefs(state),
       totalTrainTime,
       sortedTrainPlans,
-      handleDurationChange,
-      handleSaveInfo,
-      handleTraining,
-      handleCardOpConfirm,
-      handlePlanCancel,
-      handlePlanConfirm,
+      handleCheckboxChange,
+      validatePhone,
+      formatTime,
       getAge,
       getCurrentCardType,
+      handlePlanCancel,
+      handlePlanConfirm,
       showUpdate,
       handleUpdateAccountConfirm,
       gotoTrain,
-      formatTime,
-      validatePhone,
+      getTrainTypeName,
     };
   },
 };
 </script>
 
+<!-- 仿可滑动滑块的样式：简洁、无阻塞、高优先级 -->
 <style lang="less" scoped>
-// 全局变量
-@padding-base: 16px;
-@primary-color: #2563eb;
-@grey-color: #4e5969;
+// 基础变量
+@primary: #2563eb;
+@grey: #4e5969;
 @light-grey: #f5f7fa;
-@border-color: #e5e6eb;
+@border: #e5e6eb;
 @slider-height: 4px;
-@slider-button-size: 16px;
-@slider-active-color: @primary-color;
+@slider-btn-size: 16px;
 
-.botton {
-  height: 35px;
-  line-height: 35px;
-  padding: 0 10px;
-  text-align: center;
-  background-color: @primary-color;
-  color: #ffffff;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-
-  &:active {
-    background-color: #1d4ed8;
-  }
-}
-
-.form-row {
+// 头部样式
+.head-warper {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  background-color: #fff;
-  border-bottom: 1px solid #f0f0f0;
-  position: relative;
+  height: 40px;
+  padding: 0 10px;
+  margin-bottom: 16px;
 
-  &.last-child {
-    border-bottom: none;
-  }
-
-  label {
-    flex: 0 0 50px;
-    color: #333;
-    font-weight: normal;
-  }
-
-  .form-input {
-    flex: 1;
-    min-width: 120px;
-    height: 32px;
-    padding: 0 10px;
-    border: 1px solid #dcdfe6;
-    border-radius: 4px;
-    font-size: 14px;
-    color: #333;
-
-    &[readonly] {
-      background-color: #f5f7fa;
-      color: #909399;
-    }
-  }
-
-  .form-select {
-    height: 34px;
+  .left {
     cursor: pointer;
-  }
-
-  &:hover {
-    background-color: #f8f8f8;
-  }
-
-  // 错误提示样式
-  .error-tip {
-    position: absolute;
-    right: 16px;
-    color: #f56c6c;
-    font-size: 12px;
-  }
-
-  // 年龄显示样式
-  .age-text {
-    margin-left: 12px;
-    color: #666;
-    font-size: 14px;
-  }
-}
-
-// 单选框样式
-.radio-group {
-  display: flex;
-  flex: 1;
-  flex-wrap: wrap;
-  padding: 2px 0;
-  gap: 16px;
-
-  .radio-item {
-    display: flex;
-    cursor: pointer;
-    font-size: 14px;
-    color: #333;
-    input[type="radio"] {
-      margin-right: 6px;
-      border: none;
-    }
-  }
-}
-
-.dialog-content {
-  text-align: center;
-  padding: 20px 5px;
-  font-size: 14px;
-  color: #333;
-
-  .title {
-    font-weight: bold;
-    font-size: 18px;
-    color: #1d2129;
-    text-align: center;
-    margin-bottom: 24px;
-    line-height: 1.5;
-  }
-
-  .content {
-    margin-bottom: 32px;
-    .field-item {
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      .name {
-        text-align: left;
-        line-height: 30px;
-        font-size: 14px;
-        color: @grey-color;
-      }
-      .value {
-        font-size: 16px;
-        color: #1d2129;
-      }
-    }
-  }
-
-  .botton-wrap {
-    display: flex;
-    gap: 12px;
-    width: 100%;
-
-    .confirm-botton {
-      flex: 1;
-      height: 44px;
-      line-height: 44px;
-      text-align: center;
-      background-color: @primary-color;
-      color: #ffffff;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-
-      &:active {
-        background-color: #1d4ed8;
-      }
-    }
-
-    .cancel-botton {
-      flex: 1;
-      height: 44px;
-      line-height: 44px;
-      text-align: center;
-      background-color: #dde9fc;
-      color: @grey-color;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-
-      &:active {
-        background-color: @border-color;
-      }
-    }
-  }
-}
-
-.account_info-wrap {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 16px;
-  background-color: #f5f7fa;
-  min-height: 100vh;
-
-  .head-warper {
-    position: relative;
-    width: 100%;
-    height: 40px;
-    display: flex;
-    padding: 0 10px;
-    justify-content: space-between;
-    align-items: center;
-
-    .left {
-      font-size: 22px;
-      cursor: pointer;
-    }
-
     img {
       height: 20px;
     }
   }
+
+  .botton {
+    height: 35px;
+    line-height: 35px;
+    padding: 0 10px;
+    background: @primary;
+    color: #fff;
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+}
+
+// 通用区块样式
+.account_info-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+  background: @light-grey;
+  min-height: 100vh;
 }
 
 .section {
@@ -806,40 +603,35 @@ export default {
   margin-bottom: 16px;
   padding: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+  }
 }
 
-.section-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #eee;
-}
-
+// 表单行样式
 .form-row {
   display: flex;
   align-items: center;
   padding: 15px 16px;
-  background-color: #fff;
+  background: #fff;
   border-bottom: 1px solid #f0f0f0;
-
-  &.last-child {
-    border-bottom: none;
-  }
 
   label {
     flex: 0 0 100px;
     color: #333;
-    font-weight: normal;
   }
 
   .value-wrap {
-    flex: 1; /* 占满剩余宽度 */
-    display: flex; /* 内部弹性布局，值和箭头分开 */
+    flex: 1;
+    display: flex;
     align-items: center;
-    justify-content: space-between; /* 内容左对齐，箭头右对齐 */
-    min-height: 20px; /* 保证空值时也有高度 */
+    justify-content: space-between;
 
     .edit-arrow {
       color: #ccc;
@@ -849,203 +641,175 @@ export default {
     }
   }
 
-  &:hover {
-    background-color: #f8f8f8;
+  .form-input {
+    flex: 1;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+
+  .error-tip {
+    position: absolute;
+    right: 16px;
+    color: #f56c6c;
+    font-size: 12px;
   }
 }
 
-.btn-group {
+// 单选框样式
+.radio-group {
   display: flex;
-  gap: 12px;
-  margin-top: 20px;
-  justify-content: flex-end;
-}
+  flex: 1;
+  gap: 24px;
 
-.btn {
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
+  .radio-item {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
 
-  &.primary {
-    background-color: #409eff;
-    color: #fff;
-
-    &:hover {
-      background-color: #66b1ff;
-    }
-  }
-
-  &.secondary {
-    background-color: #909399;
-    color: #fff;
-
-    &:hover {
-      background-color: #a6a9ad;
+    input {
+      margin-right: 6px;
+      width: 16px;
+      height: 16px;
+      accent-color: @primary;
     }
   }
 }
-.duration-label {
-  font-size: 14px;
-  color: #333;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #f0f0f0;
-}
-// 训练方案区 核心样式优化
+
+// 训练方案核心样式（仿可滑动滑块）
 .plan-wrap {
+  .duration-label {
+    font-size: 14px;
+    color: #333;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 16px;
+  }
+
   .item-list {
-    margin-bottom: 20px;
     .item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 18px 0;
+      padding: 12px 0;
       border-bottom: 1px solid #f0f0f0;
 
-      // 修复布局问题，确保滑块有足够宽度
+      // 仿可滑动滑块：左右布局合理分配宽度
       .item-left {
         flex: 1;
         padding-right: 10px;
 
         .train-type-checkbox {
           font-size: 14px;
-          display: block;
         }
       }
 
       .item-right {
+        flex: 2;
+      }
+
+      // 仿可滑动滑块：核心容器样式，无嵌套阻塞
+      .slider-wrap {
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 14px;
-        color: #666;
-        flex: 1.5; // 增加右侧宽度占比
-        min-width: 200px;
-      }
+        width: 100%;
 
-      // 滑块容器样式优化
-      .slider-container {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex: 1;
-        min-width: 150px;
-      }
+        // 仿可滑动滑块：滑块样式（高优先级）
+        :deep(.train-slider) {
+          flex: 1;
+          // 核心：确保滑块可交互，无样式阻塞
+          pointer-events: auto !important;
 
-      .slider-value {
-        min-width: 30px;
-        text-align: center;
-        font-size: 12px;
-        color: #333;
-        font-weight: 500;
-      }
-    }
-  }
-
-  .plan-op-wrap {
-    // 单选框行样式
-    .radio-row {
-      padding: 12px 0;
-      border-bottom: 1px solid #f0f0f0;
-
-      .radio-label {
-        flex: 0 0 100px;
-        color: #333;
-        font-weight: normal;
-      }
-
-      .radio-group {
-        display: flex;
-        gap: 24px;
-        flex: 1;
-        align-items: center;
-
-        .radio-item {
-          display: flex;
-          align-items: center;
-          cursor: pointer;
-          font-size: 14px;
-          position: relative;
-
-          input[type="radio"] {
-            margin-right: 6px;
-            width: 16px;
-            height: 16px;
-            accent-color: @primary-color;
-            cursor: pointer;
+          .van-slider__wrap {
+            height: @slider-height;
           }
 
-          .radio-text {
-            cursor: pointer;
+          .van-slider__track {
+            background: @primary;
+            height: @slider-height;
+            border-radius: @slider-height / 2;
           }
+
+          .van-slider__bar {
+            background: @border;
+            height: @slider-height;
+            border-radius: @slider-height / 2;
+          }
+
+          // 仿可滑动滑块：按钮样式（可点击）
+          .van-slider__button {
+            width: @slider-btn-size;
+            height: @slider-btn-size;
+            margin-top: -(@slider-btn-size - @slider-height)/2;
+            background: #fff;
+            border: 2px solid @primary;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            // 核心：提升层级，确保可点击
+            z-index: 10 !important;
+            pointer-events: auto !important;
+          }
+
+          // 禁用状态
+          &.van-slider--disabled {
+            .van-slider__track {
+              background: #c0c4cc;
+            }
+            .van-slider__button {
+              border-color: #c0c4cc;
+              background: #f5f5f5;
+            }
+          }
+        }
+
+        .slider-num {
+          min-width: 30px;
+          text-align: center;
+          font-size: 12px;
+          color: #333;
+          font-weight: 500;
         }
       }
     }
+  }
 
-    // 滑块行样式
-    .slider-row {
-      padding: 12px 0;
+  // 总时长滑块
+  .full-slider {
+    width: 100%;
+    flex: 1;
+  }
 
-      .radio-label {
-        flex: 0 0 100px;
-        color: #333;
-        font-weight: normal;
+  // 按钮组
+  .btn-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    justify-content: flex-end;
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+
+      &.primary {
+        background: #409eff;
+        color: #fff;
       }
 
-      .full-width {
-        width: 100%;
-        flex: 1;
+      &.secondary {
+        background: #909399;
+        color: #fff;
       }
     }
   }
 }
 
-// 自定义滑块样式 - 修复圆点过大和无法滑动问题
-:deep(.custom-slider) {
-  // 滑块轨道样式
-  .van-slider__track {
-    height: @slider-height;
-    border-radius: @slider-height / 2;
-    background-color: @slider-active-color;
-  }
-
-  // 滑块背景样式
-  .van-slider__bar {
-    height: @slider-height;
-    border-radius: @slider-height / 2;
-    background-color: #e5e6eb;
-  }
-
-  // 滑块按钮样式（核心：缩小圆点）
-  .van-slider__button {
-    width: @slider-button-size;
-    height: @slider-button-size;
-    border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    background-color: #fff;
-    border: 2px solid @slider-active-color;
-    // 修复点击区域问题
-    &:active {
-      transform: scale(1.1);
-    }
-  }
-
-  // 禁用状态样式
-  &.van-slider--disabled {
-    .van-slider__track {
-      background-color: #c0c4cc;
-    }
-
-    .van-slider__button {
-      background-color: #f5f5f5;
-      border-color: #c0c4cc;
-    }
-  }
-}
-
-// 档案列表区
+// 档案列表
 .archive-wrap {
   .archive-item {
     display: flex;
@@ -1054,15 +818,13 @@ export default {
     padding: 12px;
     border-bottom: 1px solid #f0f0f0;
     cursor: pointer;
-    transition: background-color 0.2s;
 
     &:hover {
-      background-color: #f5f7fa;
+      background: @light-grey;
     }
 
     .arrow {
       color: #909399;
-      font-size: 16px;
     }
   }
 
@@ -1071,5 +833,57 @@ export default {
     color: #909399;
     padding: 20px 0;
   }
+}
+
+// 弹窗样式
+.dialog-content {
+  padding: 20px 5px;
+  font-size: 14px;
+
+  .title {
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .botton-wrap {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+
+    .cancel-botton,
+    .confirm-botton {
+      flex: 1;
+      height: 44px;
+      line-height: 44px;
+      text-align: center;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .confirm-botton {
+      background: @primary;
+      color: #fff;
+    }
+
+    .cancel-botton {
+      background: #dde9fc;
+      color: @grey;
+    }
+  }
+}
+</style>
+
+<!-- 仿可滑动滑块：全局样式，确保无阻塞 -->
+<style>
+// 核心：全局确保滑块按钮可交互
+.van-slider__button {
+  pointer-events: auto !important;
+  z-index: 10 !important;
+}
+// 修复移动端触摸滑动
+.van-slider {
+  touch-action: pan-x !important;
 }
 </style>
