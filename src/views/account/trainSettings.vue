@@ -20,59 +20,49 @@
           />
         </div>
 
-        <!-- 修复：item.value → catItem.value -->
         <div
           v-if="expandedTypeIds.includes(catItem.value)"
           class="train-type-content"
         >
+          <!-- 核心修复1：移除sticky/scrollspy避免渲染异常，添加animated提升切换体验 -->
           <van-tabs
             v-model:active="activeTab[catItem.value]"
             class="type-tabs"
-            sticky
-            scrollspy
+            animated
+            @change="handleTabChange(catItem.value)"
           >
             <van-tab
               v-for="typeItem in typeMap"
-              :key="typeItem.value"
-              :title="typeItem.label"
+              :key="`tab-${catItem.value}-${typeItem.value}`"
+              :title="typeItem.label + ' (' + typeItem.value + ')'"
             >
-              <div class="plan-list">
-                <!-- 修复：仅渲染当前激活Tab，优化渲染性能 -->
-                <template
-                  v-if="activeTab[catItem.value] === Number(typeItem.value)"
+              <!-- 核心修复2：强制设置Tab内容高度，避免样式错位 -->
+              <div class="plan-list" :data-tab-id="typeItem.value">
+                <van-checkbox-group
+                  v-model="selectedPlans[`${catItem.value}-${typeItem.value}`]"
                 >
-                  <van-checkbox-group
-                    v-model="
-                      selectedPlans[`${catItem.value}-${typeItem.value}`]
-                    "
-                  >
-                    <van-cell-group>
-                      <!-- 空数据提示 -->
-                      <div
-                        v-if="
-                          getCachedGameList(catItem.value, typeItem.value)
-                            .length === 0
-                        "
-                        class="plan-empty-tip"
-                      >
-                        暂无相关训练方案
-                      </div>
-                      <van-cell
-                        v-for="plan in getCachedGameList(
-                          catItem.value,
-                          typeItem.value
-                        )"
-                        :key="plan.id"
-                        clickable
-                      >
-                        <template #icon>
-                          <van-checkbox :name="plan.id" />
-                        </template>
-                        {{ plan.name }}
-                      </van-cell>
-                    </van-cell-group>
-                  </van-checkbox-group>
-                </template>
+                  <van-cell-group>
+                    <van-cell
+                      v-for="plan in getGameListByActiveTab(
+                        catItem.value,
+                        typeItem.value
+                      )"
+                      :key="plan.id"
+                      clickable
+                    >
+                      <template #icon>
+                        <van-checkbox :name="plan.id" />
+                      </template>
+                      {{ plan.name }}
+                    </van-cell>
+                    <!-- <div
+                      v-if="getGameListByActiveTab(catItem.value).length === 0"
+                      class="plan-empty-tip"
+                    >
+                      暂无相关方案
+                    </div> -->
+                  </van-cell-group>
+                </van-checkbox-group>
               </div>
             </van-tab>
           </van-tabs>
@@ -91,7 +81,7 @@
 </template>
 
 <script>
-import { reactive, toRefs, onMounted, computed, shallowRef } from "vue";
+import { reactive, toRefs, onMounted, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { gameList } from "@/api/admin";
 import {
@@ -124,9 +114,9 @@ export default {
     const { id } = route.query;
 
     const state = reactive({
-      query: { pageSize: 10000, pageIndex: 1, status: 2, type: -1, id }, // 修复：添加id参数
+      query: { pageSize: 10000, pageIndex: 1, status: 2, type: -1, id },
       gameList: [],
-      // 修复：初始化activeTab，默认选中第一个Tab（游戏）
+      // 激活的Tab：{ 训练类型ID: 子类型ID }
       activeTab: {},
       // 训练类型分类
       cats: [
@@ -153,14 +143,12 @@ export default {
       expandedTypeIds: [],
       // 选中的方案：{ "trainTypeId-tabId": [planId1, planId2] }
       selectedPlans: {},
-      // 新增：标记数据是否加载完成
+      // 标记数据是否加载完成
       isLoaded: false,
     });
 
     // 缓存游戏列表结果：{ "trainTypeId-tabId": [] }
-    const gameListCache = shallowRef({});
-    // 新增：缓存更新时间戳，替代不规范的_updated属性
-    const cacheUpdateTime = shallowRef(0);
+    const gameListCache = {};
 
     // 计算已选方案总数
     const totalSelectedPlans = computed(() => {
@@ -171,34 +159,33 @@ export default {
       return count;
     });
 
-    // 修复：筛选游戏列表逻辑，移除错误的flatMap
+    // 筛选当前激活Tab的游戏列表
     function filterGameList(trainTypeId, tabId) {
-      if (!state.gameList.length || !trainTypeId || tabId === undefined)
+      const trainTypeIdNum = Number(trainTypeId);
+      const tabIdNum = Number(tabId);
+
+      if (!state.gameList.length || isNaN(trainTypeIdNum) || isNaN(tabIdNum)) {
         return [];
+      }
 
       return state.gameList.filter((item) => {
-        // 全部类型显示所有匹配trainTypeId的项
-        if (Number(tabId) === -1) {
-          return item.cats?.includes(Number(trainTypeId));
-        }
-        // 指定类型需同时匹配类型和分类
         return (
-          item.type === Number(tabId) &&
-          item.cats?.includes(Number(trainTypeId))
+          Array.isArray(item.cats) &&
+          item.cats.includes(trainTypeIdNum) &&
+          item.type === tabIdNum
         );
       });
     }
 
-    // 带缓存的游戏列表获取方法（修复缓存逻辑）
-    function getCachedGameList(trainTypeId, tabId) {
-      if (!trainTypeId || tabId === undefined) return [];
+    function getGameListByActiveTab(trainTypeId, tabId) {
+      return filterGameList(trainTypeId, tabId);
+    }
 
+    // Tab切换时更新缓存
+    function handleTabChange(trainTypeId) {
+      const tabId = state.activeTab[trainTypeId];
       const cacheKey = `${trainTypeId}-${tabId}`;
-      // 缓存不存在/数据已更新时重新计算
-      if (!gameListCache.value[cacheKey] || cacheUpdateTime.value > 0) {
-        gameListCache.value[cacheKey] = filterGameList(trainTypeId, tabId);
-      }
-      return gameListCache.value[cacheKey] || [];
+      delete gameListCache[cacheKey];
     }
 
     // 切换训练类型展开/折叠
@@ -208,14 +195,15 @@ export default {
         state.expandedTypeIds.splice(index, 1);
       } else {
         state.expandedTypeIds.push(typeId);
-        // 修复：初始化Tab激活状态为"游戏"（value=0）
         if (state.activeTab[typeId] === undefined) {
           state.activeTab[typeId] = 0;
+          const cacheKey = `${typeId}-0`;
+          gameListCache[cacheKey] = filterGameList(typeId, 0);
         }
       }
     }
 
-    // 初始化选中方案对象（修复：提前初始化所有可能的key）
+    // 初始化选中方案对象
     function initSelectedPlans() {
       state.cats.forEach((catItem) => {
         state.typeMap.forEach((typeItem) => {
@@ -230,17 +218,10 @@ export default {
     // 初始化数据
     async function init() {
       try {
-        // 修复：传递完整的查询参数（包含id）
         const { data } = await gameList({ ...state.query, id });
         state.gameList = data?.list || [];
         state.isLoaded = true;
-
-        // 更新缓存时间戳，触发缓存重新计算
-        cacheUpdateTime.value = Date.now();
-
-        // 初始化选中方案对象
         initSelectedPlans();
-
         Toast.success("数据加载成功");
       } catch (error) {
         console.error("初始化失败：", error);
@@ -250,14 +231,13 @@ export default {
       }
     }
 
-    // 确认按钮逻辑（补充完整逻辑）
+    // 确认按钮逻辑
     function handleConfirm() {
       if (totalSelectedPlans.value === 0) {
         Toast.warning("请至少选择一个训练方案");
         return;
       }
 
-      // 整理选中的方案数据
       const selectedData = {};
       Object.entries(state.selectedPlans).forEach(([key, planIds]) => {
         if (planIds.length > 0) {
@@ -267,9 +247,6 @@ export default {
 
       console.log("选中的训练方案：", selectedData);
       Toast.success(`已确认选择 ${totalSelectedPlans.value} 个训练方案`);
-
-      // 可在这里添加保存逻辑，例如跳回上一页并传递数据
-      // router.go(-1);
     }
 
     onMounted(() => {
@@ -279,8 +256,9 @@ export default {
     return {
       ...toRefs(state),
       totalSelectedPlans,
-      getCachedGameList,
+      getGameListByActiveTab,
       toggleExpand,
+      handleTabChange,
       handleConfirm,
     };
   },
@@ -309,16 +287,6 @@ export default {
 
     img {
       height: 20px;
-    }
-
-    .botton {
-      padding: 4px 12px;
-      background-color: #1989fa;
-      color: #fff;
-      border-radius: 4px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
     }
   }
 }
@@ -359,17 +327,54 @@ export default {
   padding: 0;
 
   .type-tabs {
-    :deep(.van-tabs__wrap) {
-      background-color: #fff;
+    // 核心修复3：重置Tabs样式，避免层叠错位
+    :deep(.van-tabs) {
+      --van-tabs-default-color: #1989fa;
+      --van-tabs-line-height: 44px;
     }
 
-    :deep(.van-tab__content) {
-      padding: 0;
+    :deep(.van-tabs__wrap) {
+      background-color: #fff;
+      position: relative; // 修复定位异常
+      z-index: 1;
+    }
+
+    :deep(.van-tabs__content) {
+      // 核心修复4：强制隐藏非激活Tab内容，避免视觉重叠
+      overflow: hidden;
+      height: auto !important;
+    }
+
+    :deep(.van-tab__pane) {
+      // 核心修复5：确保每个Tab面板独立渲染，无样式共享
+      position: relative;
+      z-index: 2;
+      padding: 8px 0;
+      box-sizing: border-box;
+    }
+
+    // 激活的Tab标题样式
+    :deep(.van-tab--active) {
+      color: #1989fa;
+      font-weight: 500;
     }
   }
 
   .plan-list {
-    padding: 8px 0;
+    // 核心修复6：固定Tab内容容器样式，避免高度塌陷
+    padding: 8px 16px;
+    min-height: 100px;
+    box-sizing: border-box;
+
+    .tab-label {
+      display: block;
+      font-size: 15px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #f5f5f5;
+    }
 
     .plan-empty-tip {
       padding: 20px 0;

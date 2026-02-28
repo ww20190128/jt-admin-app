@@ -56,8 +56,8 @@ export function getPlan(params) {
 // 更新方案
 export function setPlan(params) {
   return request({
-    url: "/plan/" + params.id,
-    method: "post",
+    url: "/plan",
+    method: "put",
     data: params,
   });
 }

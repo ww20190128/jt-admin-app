@@ -113,8 +113,8 @@
           <!-- 遮挡设置 -->
           <div class="form-row radio-row">
             <label class="radio-label">遮挡设置</label>
-            <div class="radio-group">
-              <label class="radio-item">
+            <div class="radio-group plan-radio-group">
+              <label class="radio-item plan-radio-item">
                 <input
                   type="radio"
                   v-model="planSettings.show_eye"
@@ -123,7 +123,7 @@
                 />
                 <span class="radio-text">双眼</span>
               </label>
-              <label class="radio-item">
+              <label class="radio-item plan-radio-item">
                 <input
                   type="radio"
                   v-model="planSettings.show_eye"
@@ -132,7 +132,7 @@
                 />
                 <span class="radio-text">左眼</span>
               </label>
-              <label class="radio-item">
+              <label class="radio-item plan-radio-item">
                 <input
                   type="radio"
                   v-model="planSettings.show_eye"
@@ -147,8 +147,8 @@
           <!-- 集合散开模式 -->
           <div class="form-row radio-row">
             <label class="radio-label">集合散开模式</label>
-            <div class="radio-group">
-              <label class="radio-item">
+            <div class="radio-group plan-radio-group">
+              <label class="radio-item plan-radio-item">
                 <input
                   type="radio"
                   v-model="planSettings.binocular_model"
@@ -157,7 +157,7 @@
                 />
                 <span class="radio-text">混合模式</span>
               </label>
-              <label class="radio-item">
+              <label class="radio-item plan-radio-item">
                 <input
                   type="radio"
                   v-model="planSettings.binocular_model"
@@ -166,7 +166,7 @@
                 />
                 <span class="radio-text">集合优先</span>
               </label>
-              <label class="radio-item">
+              <label class="radio-item plan-radio-item">
                 <input
                   type="radio"
                   v-model="planSettings.binocular_model"
@@ -195,10 +195,10 @@
         </div>
 
         <div class="btn-group">
-          <button class="btn btn-secondary" @click="handlePlanCancel">
+          <button class="btn secondary" @click="handlePlanCancel">
             取消
           </button>
-          <button class="btn btn-primary" @click="handlePlanConfirm">
+          <button class="btn primary" @click="handlePlanConfirm">
             确认
           </button>
         </div>
@@ -223,7 +223,7 @@
     <div class="dialog-content">
       <div class="title">修改账号</div>
       <div class="content">
-        <div class="form-row">
+        <div class="form-row dialog-form-row">
           <label>姓名</label>
           <input
             type="text"
@@ -232,7 +232,7 @@
             class="form-input"
           />
         </div>
-        <div class="form-row">
+        <div class="form-row dialog-form-row">
           <label>手机号</label>
           <input
             type="tel"
@@ -243,36 +243,39 @@
           />
           <span v-if="phoneError" class="error-tip">{{ phoneError }}</span>
         </div>
-        <div class="form-row">
+        <div class="form-row dialog-form-row radio-form-row">
           <label>性别</label>
-          <div class="radio-group">
-            <label class="radio-item">
+          <div class="radio-group dialog-radio-group">
+            <label class="radio-item dialog-radio-item">
               <input
                 type="radio"
                 v-model="accountInfo.sex"
                 value="0"
                 name="sex"
-              />未知
+              />
+              <span class="radio-text">未知</span>
             </label>
-            <label class="radio-item">
+            <label class="radio-item dialog-radio-item">
               <input
                 type="radio"
                 v-model="accountInfo.sex"
                 value="1"
                 name="sex"
-              />男
+              />
+              <span class="radio-text">男</span>
             </label>
-            <label class="radio-item">
+            <label class="radio-item dialog-radio-item">
               <input
                 type="radio"
                 v-model="accountInfo.sex"
                 value="2"
                 name="sex"
-              />女
+              />
+              <span class="radio-text">女</span>
             </label>
           </div>
         </div>
-        <div class="form-row">
+        <div class="form-row dialog-form-row">
           <label>出生日期</label>
           <input
             type="date"
@@ -281,7 +284,7 @@
             placeholder="请选择出生日期"
           />
         </div>
-        <div class="form-row">
+        <div class="form-row dialog-form-row">
           <label>重置密码</label>
           <input
             type="password"
@@ -658,23 +661,43 @@ export default {
   }
 }
 
-// 单选框样式
-.radio-group {
-  display: flex;
-  flex: 1;
-  gap: 24px;
+// 训练方案单选框样式（支持换行）
+.radio-row {
+  align-items: flex-start;
+  padding: 12px 16px;
 
-  .radio-item {
+  .radio-label {
+    flex: 0 0 100px;
+    padding-top: 4px;
+    text-align: right;
+    margin-right: 10px;
+  }
+
+  .plan-radio-group {
+    flex: 1;
     display: flex;
-    align-items: center;
-    cursor: pointer;
-    font-size: 14px;
+    flex-wrap: wrap; // 允许换行
+    gap: 10px 20px; // 行列间距
+    padding-top: 2px;
 
-    input {
-      margin-right: 6px;
-      width: 16px;
-      height: 16px;
-      accent-color: @primary;
+    .plan-radio-item {
+      display: flex;
+      align-items: center;
+      min-width: 70px; // 最小宽度
+      box-sizing: border-box;
+
+      input {
+        margin-right: 6px;
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+        accent-color: @primary;
+      }
+
+      .radio-text {
+        flex-shrink: 0;
+        font-size: 14px;
+      }
     }
   }
 }
@@ -837,14 +860,80 @@ export default {
 
 // 弹窗样式
 .dialog-content {
-  padding: 20px 5px;
+  padding: 20px 15px;
   font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
 
   .title {
     font-size: 18px;
     font-weight: bold;
     text-align: center;
     margin-bottom: 24px;
+  }
+
+  // 弹窗表单行样式
+  .dialog-form-row {
+    display: flex;
+    align-items: flex-start;
+    padding: 0;
+    background: transparent;
+    border-bottom: none;
+    margin-bottom: 18px;
+    position: relative;
+
+    label {
+      flex: 0 0 70px;
+      width: 70px;
+      margin-right: 10px;
+      text-align: right;
+      padding-top: 8px;
+    }
+
+    .form-input {
+      flex: 1;
+      height: 40px;
+      padding: 0 12px;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+
+    .error-tip {
+      position: static;
+      display: block;
+      margin-left: 80px;
+      margin-top: 5px;
+      width: 100%;
+    }
+  }
+
+  // 弹窗单选行样式
+  .radio-form-row {
+    align-items: flex-start;
+
+    .dialog-radio-group {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap; // 允许换行
+      gap: 15px 20px; // 行列间距
+      padding-top: 5px;
+
+      .dialog-radio-item {
+        display: flex;
+        align-items: center;
+        min-width: 60px; // 最小宽度
+        box-sizing: border-box;
+
+        input {
+          margin-right: 6px;
+          flex-shrink: 0;
+        }
+
+        .radio-text {
+          flex-shrink: 0;
+        }
+      }
+    }
   }
 
   .botton-wrap {

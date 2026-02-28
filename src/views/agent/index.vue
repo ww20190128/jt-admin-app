@@ -25,14 +25,14 @@
         <div class="dialog-header">
           <div class="dialog-title">修改商户信息</div>
         </div>
-        
+
         <!-- 内容区域 -->
         <div class="dialog-body">
           <div class="form-item">
             <label class="form-label">代理名称</label>
             <div class="form-value">{{ updateInfo.name }}</div>
           </div>
-          
+
           <div class="form-item">
             <label class="form-label">重置密码</label>
             <van-field
@@ -42,7 +42,7 @@
               class="form-input"
             />
           </div>
-          
+
           <div class="form-item">
             <label class="form-label">签约状态</label>
             <div class="radio-container">
@@ -71,11 +71,15 @@
             </div>
           </div>
         </div>
-        
+
         <!-- 按钮区域 -->
         <div class="dialog-footer">
-          <button class="btn cancel-btn" @click="showUpdate = false">取消</button>
-          <button class="btn confirm-btn" @click="handleUpdateConfirm">确定</button>
+          <button class="btn cancel-btn" @click="showUpdate = false">
+            取消
+          </button>
+          <button class="btn confirm-btn" @click="handleUpdateConfirm">
+            确定
+          </button>
         </div>
       </div>
     </BaseDialog>
@@ -113,6 +117,7 @@ import BaseDialog from "@/components/BaseDialog";
 
 import { Uploader, Field } from "vant";
 import { Toast } from "vant";
+import { useStore } from "@/store";
 export default {
   name: "agent",
   components: {
@@ -131,6 +136,7 @@ export default {
     VanField: Field,
   },
   setup() {
+    const store = useStore();
     const router = useRouter();
     const state = reactive({
       list: [], // 登录列表
@@ -149,6 +155,9 @@ export default {
     });
 
     onMounted(() => {
+      if (!store.getters.token) {
+        router.push({ path: "/login", query: {} });
+      }
       init();
     });
 
@@ -189,7 +198,7 @@ export default {
       }
       state.showUpdate = false;
     }
-    
+
     function handleUpdateItem(item) {
       state.updateInfo = {
         id: item.Agent.id,
@@ -199,7 +208,7 @@ export default {
       };
       state.showUpdate = true;
     }
-    
+
     return {
       onNavSearch,
       handleUpdateConfirm,
@@ -243,12 +252,12 @@ export default {
 // 列表页面样式
 .page-content {
   padding: 10px @padding-base 0;
-  
+
   .title-desc {
     font-size: 13px !important;
     position: relative;
     color: @text-secondary;
-    
+
     &:before {
       content: "";
       display: block;
@@ -263,14 +272,14 @@ export default {
       transform: translateY(-100%);
     }
   }
-  
+
   :deep(.header-title-wrap) {
     background-color: @bg-white;
     border-radius: @radius-sm;
     margin-bottom: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
-  
+
   :deep(.cell-list-wrap) {
     .cell-item {
       background-color: @bg-white;
@@ -278,7 +287,7 @@ export default {
       margin-bottom: 8px;
       border: 1px solid @border-color;
       transition: all 0.2s ease;
-      
+
       &:hover {
         border-color: @primary-color;
         background-color: #f0f5ff;
@@ -296,13 +305,13 @@ export default {
   border-radius: @radius-base;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  
+
   // 弹窗头部
   .dialog-header {
     padding: 20px @padding-base;
     border-bottom: 1px solid @border-color;
     text-align: center;
-    
+
     .dialog-title {
       font-size: 18px;
       font-weight: 600;
@@ -310,18 +319,18 @@ export default {
       margin: 0;
     }
   }
-  
+
   // 弹窗内容区
   .dialog-body {
     padding: 20px @padding-base;
-    
+
     .form-item {
       margin-bottom: 24px;
-      
+
       &:last-child {
         margin-bottom: 0;
       }
-      
+
       .form-label {
         display: block;
         font-size: 14px;
@@ -329,7 +338,7 @@ export default {
         margin-bottom: 8px;
         font-weight: 500;
       }
-      
+
       .form-value {
         height: 44px;
         line-height: 44px;
@@ -339,7 +348,7 @@ export default {
         font-size: 16px;
         color: @text-primary;
       }
-      
+
       // 输入框样式
       .form-input {
         :deep(.van-cell) {
@@ -349,27 +358,27 @@ export default {
           border-radius: @radius-sm;
           height: 44px;
         }
-        
+
         :deep(.van-field__control) {
           font-size: 15px;
           color: @text-primary;
           height: 44px;
           line-height: 44px;
         }
-        
+
         :deep(.van-field__placeholder) {
           color: @text-placeholder;
           font-size: 14px;
         }
       }
-      
+
       // 单选框容器
       .radio-container {
         display: flex;
         gap: 30px;
         padding-top: 4px;
       }
-      
+
       // 单选框样式（修复点击问题）
       .radio-label {
         display: flex;
@@ -377,7 +386,7 @@ export default {
         cursor: pointer;
         font-size: 15px;
         position: relative;
-        
+
         // 隐藏原生radio，但保留功能
         .radio-input {
           position: absolute;
@@ -387,7 +396,7 @@ export default {
           z-index: 2;
           cursor: pointer;
         }
-        
+
         // 自定义radio圆点
         .radio-dot {
           display: inline-block;
@@ -399,18 +408,18 @@ export default {
           position: relative;
           transition: all 0.2s ease;
         }
-        
+
         // 单选文字
         .radio-text {
           color: @text-secondary;
           transition: all 0.2s ease;
         }
-        
+
         // 签约状态样式
         &:first-child {
           .radio-input:checked + .radio-dot {
             border-color: @success-color;
-            
+
             &:after {
               content: "";
               position: absolute;
@@ -423,18 +432,18 @@ export default {
               background-color: @success-color;
             }
           }
-          
+
           .radio-input:checked ~ .radio-text {
             color: @success-color;
             font-weight: 500;
           }
         }
-        
+
         // 解除状态样式
         &:nth-child(2) {
           .radio-input:checked + .radio-dot {
             border-color: @danger-color;
-            
+
             &:after {
               content: "";
               position: absolute;
@@ -447,7 +456,7 @@ export default {
               background-color: @danger-color;
             }
           }
-          
+
           .radio-input:checked ~ .radio-text {
             color: @danger-color;
             font-weight: 500;
@@ -456,7 +465,7 @@ export default {
       }
     }
   }
-  
+
   // 弹窗底部按钮区（修复显示问题）
   .dialog-footer {
     display: flex;
@@ -464,7 +473,7 @@ export default {
     padding: 16px @padding-base 20px;
     border-top: 1px solid @border-color;
     background-color: @bg-gray-light;
-    
+
     .btn {
       flex: 1;
       height: 48px;
@@ -474,23 +483,23 @@ export default {
       border: none;
       cursor: pointer;
       transition: all 0.2s ease;
-      
+
       // 取消按钮
       &.cancel-btn {
         background-color: @bg-white;
         color: @text-secondary;
         border: 1px solid @border-color;
-        
+
         &:active {
           background-color: @bg-gray;
         }
       }
-      
+
       // 确定按钮
       &.confirm-btn {
         background-color: @primary-color;
         color: @bg-white;
-        
+
         &:active {
           background-color: @primary-dark;
         }

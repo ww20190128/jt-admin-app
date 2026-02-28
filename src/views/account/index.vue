@@ -110,7 +110,7 @@ import SearchNavBar from "@/components/SearchNavBar";
 import { getMembersList } from "@/api/admin";
 import { useScrollBottom } from "@/hooks/useScroll";
 import CopyRight from "@/components/CopyRight";
-
+import { useStore } from "@/store";
 export default {
   name: "account",
   components: {
@@ -120,6 +120,7 @@ export default {
   setup() {
     const router = useRouter();
     const route = useRoute();
+    const store = useStore();
     const state = reactive({
       activeIndex: 0,
       option: [
@@ -220,6 +221,9 @@ export default {
     }
 
     onMounted(() => {
+      if (!store.getters.token) {
+        router.push({ path: "/login", query: {} });
+      }
       init();
       getList();
     });
