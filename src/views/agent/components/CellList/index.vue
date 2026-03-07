@@ -94,18 +94,21 @@ export default {
 };
 </script>
 <style lang="less" scoped>
-// 极简白色基调配色体系
+// 调整配色体系：核心新增蓝色系变量，保留原有逻辑
 @white-primary: #ffffff;     // 主纯白
 @white-light: #f9fafb;       // 极浅灰背景
 @white-border: #f0f0f0;      // 浅灰边框
-@white-hover: #f5f5f5;       // hover浅灰
-@accent-light: #e8f4f8;      // 淡蓝点缀
-@accent-main: #88b0c9;       // 主淡蓝（交互）
 @text-primary: #333333;      // 深灰文字（替代纯黑）
 @text-secondary: #666666;    // 中灰文字
 @text-tertiary: #999999;     // 浅灰文字
 @status-normal: #94c9b1;     // 浅绿（签约）
 @status-abnormal: #e9b4b4;   // 浅红（解约）
+
+// 新增蓝色系变量（核心修改）
+@blue-primary: #e8f4f8;      // 浅蓝主背景（item默认）
+@blue-hover: #d1e7f0;        // 浅蓝hover背景
+@blue-deep: #88b0c9;         // 深蓝（按钮/强调）
+@blue-border: #c5d9e5;       // 蓝灰色边框
 
 .page-header {
   font-size: 32px;
@@ -119,23 +122,24 @@ export default {
   flex-direction: column;
 }
 
+// 核心修改：item背景改为蓝色系
 .item {
-  background: @white-primary; // 纯白主背景
+  background: @blue-primary; // 浅蓝背景（核心修改）
   backdrop-filter: blur(10px);
   border-radius: 12px;
   padding: 8px 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid @white-border; // 极简浅灰边框
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03); // 极淡阴影
+  border: 1px solid @blue-border; // 蓝灰色边框（适配蓝色背景）
+  box-shadow: 0 2px 8px rgba(136, 176, 201, 0.1); // 淡蓝色阴影
   transition: all 0.3s ease;
   margin-bottom: 15px;
   position: relative; // 确保状态标签定位
   &:active {
     transform: scale(0.98);
-    background: @white-hover;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    background: @blue-hover; // hover/点击时加深蓝色
+    box-shadow: 0 1px 4px rgba(136, 176, 201, 0.15);
   }
 }
 
@@ -147,8 +151,8 @@ export default {
     height: 80px;
     border-radius: 50%;
     overflow: hidden;
-    border: 2px solid @white-border; // 浅灰边框
-    background: @white-light; // 极浅灰底
+    border: 2px solid @blue-border; // 适配蓝色边框
+    background: @white-light; // 极浅灰底（保持对比）
     .van-image {
       width: 100%;
       height: 100%;
@@ -161,7 +165,7 @@ export default {
     .agent-name {
       font-size: 17px;
       font-weight: 600;
-      color: @text-primary;
+      color: @text-primary; // 深灰文字保证可读性
     }
     .field-list-wrap {
       margin-top: 10px;
@@ -180,14 +184,14 @@ export default {
         .field-button {
           margin-left: 5px;
           padding: 0px 4px;
-          background-color: @accent-main; // 淡蓝充值按钮
+          background-color: @blue-deep; // 深蓝充值按钮（适配整体蓝色系）
           color: #ffffff;
           font-size: 12px;
           border-radius: 5px;
           cursor: pointer;
           transition: all 0.2s ease;
           &:hover {
-            background-color: darken(@accent-main, 8%);
+            background-color: darken(@blue-deep, 8%);
           }
         }
       }
@@ -200,16 +204,17 @@ export default {
   flex-direction: column;
 }
 
+// 分成比例圆环：适配蓝色系
 .commission-ring {
   width: 80px;
   height: 80px;
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,
-    @accent-main 0%,
-    @accent-main calc(var(--percent) * 1%),
-    @accent-light calc(var(--percent) * 1%),
-    @accent-light 100%
+    @blue-deep 0%,
+    @blue-deep calc(var(--percent) * 1%),
+    @blue-primary calc(var(--percent) * 1%),
+    @blue-primary 100%
   );
   display: flex;
   align-items: center;
@@ -222,7 +227,7 @@ export default {
     width: 70px;
     height: 70px;
     border-radius: 50%;
-    background: @white-primary; // 纯白内圆
+    background: @white-primary; // 纯白内圆（保持对比）
   }
 
   .commission-text {
@@ -256,7 +261,7 @@ export default {
   font-weight: 500;
   color: @text-primary; // 深灰文字
   z-index: 2;
-  border: 1px solid @white-border; // 浅灰边框
+  border: 1px solid @blue-border; // 适配蓝色边框
 }
 
 // 签约状态 - 浅绿底（低饱和）

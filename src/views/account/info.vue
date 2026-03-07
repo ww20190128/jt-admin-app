@@ -17,7 +17,7 @@
           <label>姓名</label>
           <div class="value-wrap">
             <span>{{ accountInfo.username }}</span>
-            <span class="edit-arrow" @click="showUpdate">></span>
+            <span class="edit-arrow" @click="showUpdate()">></span>
           </div>
         </div>
         <div class="form-row">
@@ -29,22 +29,27 @@
         <div class="form-row">
           <label>性别</label>
           <div class="value-wrap">
-            <span>{{ accountInfo.sex == "1" ? "男" : "女" }}</span>
-            <span class="edit-arrow" @click="showUpdate">></span>
+            <span>{{
+              accountInfo.sex == "1"
+                ? "男"
+                : accountInfo.sex == "0"
+                ? "未知"
+                : "女"
+            }}</span>
+            <span class="edit-arrow" @click="showUpdate()">></span>
           </div>
         </div>
         <div class="form-row">
           <label>年龄</label>
           <div class="value-wrap">
-            <span>{{ getAge() }}</span>
-            <span class="edit-arrow" @click="showUpdate">></span>
+            <span>{{ getAge(accountInfo.birthday) }}</span>
+            <span class="edit-arrow" @click="showUpdate()">></span>
           </div>
         </div>
         <div class="form-row">
           <label>当前卡类型</label>
           <div class="value-wrap">
             <span>{{ getCurrentCardType() }}</span>
-            <span class="edit-arrow" @click="showUpdate">></span>
           </div>
         </div>
         <div class="form-row">
@@ -54,17 +59,56 @@
           </div>
         </div>
         <div class="form-row">
-          <label>状态</label>
-          <div class="value-wrap">
-            <span>{{ accountInfo.status == "1" ? "正常" : "暂停" }}</span>
-            <span class="edit-arrow" @click="showUpdate">></span>
-          </div>
-        </div>
-        <div class="form-row">
           <label>重置密码</label>
           <div class="value-wrap">
             <span></span>
-            <span class="edit-arrow" @click="showUpdate">></span>
+            <span class="edit-arrow" @click="showChangePassword()">></span>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>状态</label>
+          <div class="value-wrap">
+            <span>{{
+              accountInfo.status == "2" ? "正常训练" : "暂停训练"
+            }}</span>
+            <!-- 状态操作按钮 -->
+            <button
+              class="status-btn"
+              :class="accountInfo.status == '2' ? 'disable-btn' : 'restore-btn'"
+              @click="handleStatusChange"
+            >
+              {{ accountInfo.status == "2" ? "暂停训练" : "恢复训练" }}
+            </button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>卡操作</label>
+          <div class="value-wrap card-actions">
+            <button
+              class="card-btn upgvip-btn"
+              @click="handleCardAction('upgvip')"
+            >
+              升级
+            </button>
+            <button
+              class="card-btn cancelvip-btn"
+              @click="handleCardAction('cancelvip')"
+            >
+              退卡
+            </button>
+            <button
+              class="card-btn buyvip-btn"
+              @click="handleCardAction('buyvip')"
+            >
+              购买
+            </button>
+            <button
+              class="card-btn freevip-btn"
+              @click="handleCardAction('freevip')"
+            >
+              赠送
+            </button>
           </div>
         </div>
       </div>
@@ -76,32 +120,23 @@
       <p class="duration-label">时长单位：分</p>
       <div class="plan-wrap">
         <div class="item-list">
-          <!-- 仿可滑动滑块：简化DOM结构，提升交互优先级 -->
+          <!-- 仿可滑动滑块：修复绑定逻辑，确保可滑动 -->
           <div
             class="item"
-            v-for="(item, index) in sortedTrainPlans"
+            v-for="(item, index) in trainPlanList"
             :key="item.id || index"
           >
             <div class="item-left">
-              <van-checkbox
-                v-model="item.checked"
-                class="train-type-checkbox"
-                @change="handleCheckboxChange(item)"
-              >
-                {{ getTrainTypeName(item.course_id) }}
-              </van-checkbox>
+              <span>{{ getTrainTypeName(item.course_id) }}</span>
             </div>
             <div class="item-right">
-              <!-- 仿可滑动滑块：独立容器，无嵌套阻塞 -->
               <div class="slider-wrap">
-                <!-- 核心：原生可滑动滑块结构，移除多余属性 -->
                 <van-slider
                   v-model="item.course_duration"
                   min="0"
                   max="60"
                   step="1"
                   class="train-slider"
-                  :disabled="!item.checked"
                 />
                 <span class="slider-num">{{ item.course_duration }}</span>
               </div>
@@ -195,12 +230,8 @@
         </div>
 
         <div class="btn-group">
-          <button class="btn secondary" @click="handlePlanCancel">
-            取消
-          </button>
-          <button class="btn primary" @click="handlePlanConfirm">
-            确认
-          </button>
+          <button class="btn secondary" @click="handlePlanCancel">重置</button>
+          <button class="btn primary" @click="handlePlanConfirm">确认</button>
         </div>
       </div>
     </div>
@@ -216,103 +247,143 @@
         <div v-if="trainlog.length === 0" class="empty-tip">暂无训练记录</div>
       </div>
     </div>
-  </div>
 
-  <!-- 修改账号弹窗 -->
-  <BaseDialog v-model:show="showUpdateAccount" :showConfirmButton="false">
-    <div class="dialog-content">
-      <div class="title">修改账号</div>
-      <div class="content">
-        <div class="form-row dialog-form-row">
-          <label>姓名</label>
-          <input
-            type="text"
-            v-model="accountInfo.username"
-            placeholder="请输入姓名"
-            class="form-input"
-          />
+    <!-- 修改账号弹窗 -->
+    <BaseDialog v-model:show="showUpdateAccount" :showConfirmButton="false">
+      <div class="dialog-content">
+        <!-- 根据修改类型显示不同标题 -->
+        <div class="title">
+          {{
+            Object.keys(changePasswordInfo).length > 0
+              ? "重置密码"
+              : "修改用户信息"
+          }}
         </div>
-        <div class="form-row dialog-form-row">
-          <label>手机号</label>
-          <input
-            type="tel"
-            v-model="accountInfo.account"
-            placeholder="请输入手机号"
-            class="form-input"
-            @blur="validatePhone"
-          />
-          <span v-if="phoneError" class="error-tip">{{ phoneError }}</span>
-        </div>
-        <div class="form-row dialog-form-row radio-form-row">
-          <label>性别</label>
-          <div class="radio-group dialog-radio-group">
-            <label class="radio-item dialog-radio-item">
+        <div class="content">
+          <!-- 非密码修改时显示完整表单 -->
+          <template v-if="Object.keys(updateAccountInfo).length > 0">
+            <div class="form-row dialog-form-row">
+              <label>姓名</label>
               <input
-                type="radio"
-                v-model="accountInfo.sex"
-                value="0"
-                name="sex"
+                type="text"
+                v-model="updateAccountInfo.username"
+                placeholder="请输入姓名"
+                class="form-input"
               />
-              <span class="radio-text">未知</span>
-            </label>
-            <label class="radio-item dialog-radio-item">
+            </div>
+            <div class="form-row dialog-form-row">
+              <label>手机号</label>
               <input
-                type="radio"
-                v-model="accountInfo.sex"
-                value="1"
-                name="sex"
+                type="tel"
+                v-model="updateAccountInfo.account"
+                placeholder="请输入手机号"
+                class="form-input"
+                @blur="validatePhone"
               />
-              <span class="radio-text">男</span>
-            </label>
-            <label class="radio-item dialog-radio-item">
+              <span v-if="updateAccountInfo.phoneError" class="error-tip">{{
+                updateAccountInfo.phoneError
+              }}</span>
+            </div>
+            <div class="form-row dialog-form-row radio-form-row">
+              <label>性别</label>
+              <div class="radio-group dialog-radio-group">
+                <label class="radio-item dialog-radio-item">
+                  <input
+                    type="radio"
+                    v-model="updateAccountInfo.sex"
+                    value="0"
+                    name="sex"
+                  />
+                  <span class="radio-text">未知</span>
+                </label>
+                <label class="radio-item dialog-radio-item">
+                  <input
+                    type="radio"
+                    v-model="updateAccountInfo.sex"
+                    value="1"
+                    name="sex"
+                  />
+                  <span class="radio-text">男</span>
+                </label>
+                <label class="radio-item dialog-radio-item">
+                  <input
+                    type="radio"
+                    v-model="updateAccountInfo.sex"
+                    value="2"
+                    name="sex"
+                  />
+                  <span class="radio-text">女</span>
+                </label>
+              </div>
+            </div>
+            <div class="form-row dialog-form-row">
+              <label>出生日期</label>
               <input
-                type="radio"
-                v-model="accountInfo.sex"
-                value="2"
-                name="sex"
+                type="date"
+                v-model="updateAccountInfo.birthday"
+                class="form-input"
+                placeholder="请选择出生日期"
               />
-              <span class="radio-text">女</span>
-            </label>
-          </div>
+            </div>
+          </template>
+
+          <!-- 仅密码修改时只显示密码表单 -->
+          <template v-else-if="Object.keys(changePasswordInfo).length > 0">
+            <div class="form-row dialog-form-row password-only-row">
+              <label>新密码</label>
+              <input
+                type="password"
+                v-model="changePasswordInfo.newPassword"
+                class="form-input"
+                placeholder="请输入新密码"
+                @blur="validatePassword"
+              />
+              <span v-if="changePasswordInfo.passwordError" class="error-tip">{{
+                changePasswordInfo.passwordError
+              }}</span>
+            </div>
+            <div class="form-row dialog-form-row password-only-row">
+              <label>确认密码</label>
+              <input
+                type="password"
+                v-model="changePasswordInfo.confirmPassword"
+                class="form-input"
+                placeholder="请再次输入新密码"
+                @blur="validatePassword"
+              />
+              <span v-if="changePasswordInfo.passwordError" class="error-tip">{{
+                changePasswordInfo.passwordError
+              }}</span>
+            </div>
+          </template>
         </div>
-        <div class="form-row dialog-form-row">
-          <label>出生日期</label>
-          <input
-            type="date"
-            v-model="accountInfo.birthday"
-            class="form-input"
-            placeholder="请选择出生日期"
-          />
-        </div>
-        <div class="form-row dialog-form-row">
-          <label>重置密码</label>
-          <input
-            type="password"
-            v-model="accountInfo.password"
-            class="form-input"
-            placeholder="请输入新密码"
-          />
+        <div class="botton-wrap">
+          <div class="cancel-botton" @click="handleDialogCancel">取消</div>
+          <div class="confirm-botton" @click="handleUpdateConfirm">确定</div>
         </div>
       </div>
-      <div class="botton-wrap">
-        <div class="cancel-botton" @click="showUpdateAccount = false">取消</div>
-        <div class="confirm-botton" @click="handleUpdateAccountConfirm">
-          确定
-        </div>
-      </div>
-    </div>
-  </BaseDialog>
+    </BaseDialog>
+  </div>
 </template>
 
 <script>
 import { reactive, toRefs, onMounted, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { Toast, VanSlider, VanCheckbox } from "vant";
+import { Toast, Dialog, VanSlider, VanCheckbox } from "vant";
 
 import { getPlan, setPlan, trainlog } from "@/api/admin";
-import BaseDialog from "@/components/BaseDialog";
-import { updateAccount } from "@/api/admin";
 
+import BaseDialog from "@/components/BaseDialog";
+import {
+  updateAccount,
+  freevip,
+  buyvip,
+  cancelvip,
+  upgvip,
+  updateAccountStatus,
+  changepassword,
+} from "@/api/admin";
+import { useStore } from "@/store";
 export default {
   name: "account_info",
   components: {
@@ -321,6 +392,7 @@ export default {
     VanCheckbox,
   },
   setup() {
+    const store = useStore();
     const router = useRouter();
     const route = useRoute();
     const { id } = route.query;
@@ -328,6 +400,20 @@ export default {
     // 核心：仿可滑动滑块的状态管理，简化逻辑
     const state = reactive({
       accountInfo: {},
+      updateAccountInfo: {}, // 弹窗信息
+      changePasswordInfo: {}, // 修改密码弹窗信息
+
+      // 训练方案
+      planSettings: {
+        member_id: "",
+        show_eye: 1, // 遮挡设置
+        binocular_model: 1, // 混合散开设置
+        max_train_time: 0, // 总时长
+      },
+      effect_train_plan: [], // 已经生效的训练计划
+      trainPlanList: [],
+      //===========================
+
       classifyList: [
         { id: -1, name: "全部" },
         { id: 0, name: "免费" },
@@ -353,15 +439,9 @@ export default {
         { label: "晶体调节", value: 12 },
         { label: "眼肌", value: 13 },
       ],
-      planSettings: {
-        show_eye: 1,
-        binocular_model: 1,
-        max_train_time: 0,
-        train_plan: [],
-      },
+
       trainlog: [],
       showUpdateAccount: false,
-      phoneError: "",
     });
 
     // 总训练时长计算 - 仿可滑动滑块的简洁实现
@@ -377,55 +457,42 @@ export default {
       },
     });
 
-    // 训练计划排序 - 保持原有逻辑
-    const sortedTrainPlans = computed(() => {
-      const setPlans = state.planSettings.train_plan.map((item) => ({
-        ...item,
-        checked: true,
-        course_duration: Math.min(
-          Math.max(Math.floor(item.course_duration / 60), 0),
-          60
-        ),
-      }));
-
-      const allCourseIds = state.cats.map((cat) => cat.value);
-      const setCourseIds = setPlans.map((item) => item.course_id);
-      const unsetCourseIds = allCourseIds.filter(
-        (id) => !setCourseIds.includes(id)
-      );
-
-      const unsetPlans = unsetCourseIds.map((course_id, index) => ({
-        id: `unset_${index}`,
-        course_id,
-        course_order: setPlans.length + index + 1,
-        course_duration: 0,
-        course_games: [],
-        status: 0,
-        checked: false,
-      }));
-
-      return [...setPlans, ...unsetPlans];
-    });
-
-    // 仿可滑动滑块：复选框变更处理
-    const handleCheckboxChange = (item) => {
-      // 勾选时默认给1分钟，避免0值无感知
-      if (item.checked && item.course_duration === 0) {
-        item.course_duration = 1;
-      }
-    };
-
     // 手机号验证
     const validatePhone = () => {
-      state.phoneError = "";
-      const { account } = state.accountInfo;
-      if (!account) {
-        state.phoneError = "手机号不能为空";
+      state.updateAccountInfo.phoneError = "";
+      if (!state.updateAccountInfo.account) {
+        state.updateAccountInfo.phoneError = "手机号不能为空";
         return false;
       }
       const phoneReg = /^1[3-9]\d{9}$/;
-      if (!phoneReg.test(account)) {
-        state.phoneError = "请输入正确的手机号格式";
+      if (!phoneReg.test(state.updateAccountInfo.account)) {
+        state.updateAccountInfo.phoneError = "请输入正确的手机号格式";
+        return false;
+      }
+      return true;
+    };
+
+    // 密码验证（仅密码修改时）
+    const validatePassword = () => {
+      state.changePasswordInfo.passwordError = "";
+      if (!state.changePasswordInfo.newPassword) {
+        state.changePasswordInfo.passwordError = "密码不能为空";
+        return false;
+      }
+      // 密码强度验证（可根据需求调整）
+      if (state.changePasswordInfo.newPassword.length < 6) {
+        state.changePasswordInfo.passwordError = "密码长度不能少于6位";
+        return false;
+      }
+      if (!state.changePasswordInfo.confirmPassword) {
+        state.changePasswordInfo.passwordError = "请确认密码";
+        return false;
+      }
+      if (
+        state.changePasswordInfo.confirmPassword !==
+        state.changePasswordInfo.newPassword
+      ) {
+        state.changePasswordInfo.passwordError = "两次输入的密码不一致";
         return false;
       }
       return true;
@@ -445,18 +512,15 @@ export default {
     };
 
     // 计算年龄
-    const getAge = () => {
-      if (!state.accountInfo.birthday) return "";
-      return (
-        new Date().getFullYear() -
-        new Date(state.accountInfo.birthday).getFullYear()
-      );
+    const getAge = (birthday) => {
+      if (!birthday) return 0;
+      return new Date().getFullYear() - new Date(birthday).getFullYear();
     };
 
     // 获取卡类型
     const getCurrentCardType = () => {
       const card = state.classifyList.find(
-        (c) => c.id === state.accountInfo.typeId
+        (c) => c.id === Number(state.accountInfo.typeId)
       );
       return card ? card.name : "未知";
     };
@@ -471,10 +535,69 @@ export default {
       const accountInfo = JSON.parse(
         window.localStorage.getItem("account_info_" + id)
       );
-      state.accountInfo = accountInfo;
+      state.accountInfo = accountInfo || {};
+
+      // 确保出生日期格式正确
+      if (
+        state.accountInfo.birthday &&
+        typeof state.accountInfo.birthday === "string"
+      ) {
+        let birthday = state.accountInfo.birthday;
+        if (birthday.includes("/")) {
+          const [year, month, day] = birthday.split("/");
+          birthday = `${year}-${month.padStart(2, "0")}-${day.padStart(
+            2,
+            "0"
+          )}`;
+        }
+        state.accountInfo.birthday = birthday;
+      }
+      // 确保性别和状态为字符串类型
+      if (state.accountInfo.sex === undefined) {
+        state.accountInfo.sex = "0";
+      }
+      if (state.accountInfo.status === undefined) {
+        state.accountInfo.status = "2";
+      }
+
       // 获取训练方案
-      const { data } = await getPlan({ id: 10254 });
-      state.planSettings = data;
+      try {
+        const { data } = await getPlan({ id: id });
+        if (data?.binocular_model) {
+          state.planSettings.binocular_model = data?.binocular_model;
+        }
+        if (data?.max_train_time) {
+          state.planSettings.max_train_time = data?.max_train_time;
+        }
+        if (data?.member_id) {
+          state.planSettings.member_id = data?.member_id;
+        }
+        if (data?.show_eye) {
+          state.planSettings.show_eye = data?.show_eye;
+        }
+        if (data?.train_plan && data?.train_plan.length > 1) {
+          state.effect_train_plan = data?.train_plan;
+        }
+
+        // 已经生效的训练计划
+        const setPlans = state.effect_train_plan.map((item) => ({
+          ...item,
+          course_duration: Math.max(Math.floor(item.course_duration / 60), 0),
+        }));
+
+        const allCourseIds = state.cats.map((cat) => cat.value);
+        const setCourseIds = setPlans.map((item) => item.course_id);
+        const unsetCourseIds = allCourseIds.filter(
+          (id) => !setCourseIds.includes(id)
+        );
+        // 没有生效的训练计划
+        const unsetPlans = unsetCourseIds.map((course_id, index) => ({
+          course_id,
+          course_duration: 0,
+          course_games: [],
+        }));
+        state.trainPlanList = [...setPlans, ...unsetPlans];
+      } catch (err) {}
     };
 
     // 训练方案取消
@@ -483,39 +606,250 @@ export default {
       Toast("已重置方案");
     };
 
-    // 训练方案确认
+    // 训练方案确认 - 修复提交逻辑
     const handlePlanConfirm = async () => {
       try {
-        const submitPlan = sortedTrainPlans.value
+        // 核心修复：不再重复乘以60（因为滑块已经同步为分钟转秒）
+        const submitPlan = state.trainPlanList
+          .filter((item) => item.course_duration > 0) // 只提交值大于0的计划
           .map((item) => ({
-            ...item,
-            course_duration: item.course_duration * 60,
-          }))
-          .filter((item) => item.checked);
+            course_games: item?.course_games ? item?.course_games : [],
+            course_id: Number(item.course_id),
+            course_order: item?.course_order ? Number(item.course_order) : 0,
+            course_duration: Number(item.course_duration * 60), // 直接使用已转换的秒数
+          }));
 
         await setPlan({
-          id: id,
-          ...state.planSettings,
+          member_id: Number(id),
+          max_train_time: Number(state.planSettings.max_train_time),
+          binocular_model: Number(state.planSettings.binocular_model),
+          show_eye: Number(state.planSettings.show_eye),
           train_plan: submitPlan,
         });
         Toast.success("方案保存成功");
       } catch (err) {
-        Toast.fail("方案保存失败");
+        Toast.fail(err);
       }
     };
 
     // 显示修改弹窗
     const showUpdate = () => {
+      state.updateAccountInfo = {
+        birthday: state.accountInfo.birthday
+          ? state.accountInfo.birthday.substring(0, 10)
+          : "",
+        sex: state.accountInfo.sex,
+        account: state.accountInfo.account,
+        username: state.accountInfo.username,
+        phoneError: "",
+      };
+      // 显示弹窗
       state.showUpdateAccount = true;
     };
 
-    // 确认修改账号
-    const handleUpdateAccountConfirm = async () => {
-      if (!validatePhone()) return;
-      await updateAccount({ id: id, ...state.accountInfo });
-      Toast.success("修改成功");
+    // 修改密码弹窗
+    const showChangePassword = () => {
+      // 重置密码相关状态
+      state.updateAccountInfo = {};
+      state.changePasswordInfo = {
+        passwordError: "",
+        newPassword: "",
+        confirmPassword: "",
+      };
+      // 显示弹窗
+      state.showUpdateAccount = true;
+    };
+
+    // 取消弹窗，恢复原有数据
+    const handleDialogCancel = () => {
+      state.updateAccountInfo = {};
+      state.changePasswordInfo = {};
+      // 关闭弹窗
       state.showUpdateAccount = false;
-      init();
+    };
+
+    // 确认修改（统一处理）
+    const handleUpdateConfirm = async () => {
+      try {
+        // 仅修改密码的逻辑
+        if (Object.keys(state.changePasswordInfo).length > 0) {
+          // 验证密码
+          if (!validatePassword()) {
+            return;
+          }
+          // 调用修改密码接口
+          await changepassword({
+            id: Number(id),
+            password: state.changePasswordInfo.newPassword,
+          });
+          Toast.success("密码修改成功");
+        }
+        // 修改其他信息的逻辑
+        else if (Object.keys(state.updateAccountInfo).length > 0) {
+          // 验证手机号
+          if (!validatePhone()) return;
+
+          // 构建提交数据
+          const submitData = {
+            id: Number(id),
+            username: state.updateAccountInfo.username,
+            account: state.updateAccountInfo.account,
+            sex: Number(state.updateAccountInfo.sex),
+            birthday: state.updateAccountInfo.birthday
+              ? `${state.updateAccountInfo.birthday}T00:00:00+08:00`
+              : "",
+          };
+
+          // 调用更新用户信息接口
+          await updateAccount(submitData);
+          Toast.success("用户信息修改成功");
+
+          // 更新本地存储
+          state.accountInfo = {
+            ...state.accountInfo,
+            ...submitData,
+            birthday: state.updateAccountInfo.birthday, // 存储显示格式
+          };
+          window.localStorage.setItem(
+            "account_info_" + id,
+            JSON.stringify(state.accountInfo)
+          );
+        }
+        // 关闭弹窗
+        handleDialogCancel();
+
+        // 重新初始化数据
+        init();
+      } catch (err) {
+        console.error("修改失败：", err);
+        Toast.fail(err.message || "操作失败");
+      }
+    };
+
+    // 状态切换（禁用/恢复）
+    const handleStatusChange = async () => {
+      const isCurrentNormal = state.accountInfo.status === "2";
+      const actionText = isCurrentNormal ? "暂停训练" : "恢复训练";
+
+      try {
+        // 二次确认
+        await Dialog.confirm({
+          title: "确认操作",
+          message: `您确定要${actionText}吗？`,
+          confirmButtonText: "确认",
+          cancelButtonText: "取消",
+        });
+
+        // 修复：定义newStatus变量
+        const newStatus = isCurrentNormal ? "1" : "2";
+
+        const opType = isCurrentNormal ? "pause" : "continue"; // 修复opType逻辑
+        await updateAccountStatus({
+          id: id,
+          opType: opType,
+        });
+
+        // 更新本地状态
+        state.accountInfo.status = newStatus;
+        window.localStorage.setItem(
+          "account_info_" + id,
+          JSON.stringify(state.accountInfo)
+        );
+
+        Toast.success(`${actionText}成功`);
+      } catch (err) {
+        Toast.fail(err.message || "操作失败");
+      }
+    };
+
+    // 卡操作处理
+    const handleCardAction = async (actionType) => {
+      const actionConfig = {
+        upgvip: {
+          text: "升级",
+          confirmText: "升级该用户的卡类型",
+          message: "您确定要升级该用户的卡类型吗？",
+        },
+        cancelvip: {
+          text: "退卡",
+          confirmText: "为该用户办理退卡",
+          message: "您确定要为该用户办理退卡吗？此操作不可逆！",
+        },
+        buyvip: {
+          text: "购买",
+          confirmText: "为该用户购买新卡",
+          message: "您确定要为该用户购买新卡吗？",
+        },
+        freevip: {
+          text: "赠送",
+          confirmText: "为该用户赠送卡",
+          message: "您确定要为该用户赠送卡吗？",
+        },
+      };
+
+      const config = actionConfig[actionType];
+      if (!config) return;
+
+      try {
+        // 二次确认
+        await Dialog.confirm({
+          title: "确认操作",
+          message: config.message,
+          confirmButtonText: "确认",
+          cancelButtonText: "取消",
+          dangerous: actionType === "cancelvip", // 退卡标记为危险操作
+        });
+
+        // 获取用户信息
+        const userInfo = computed(() => store.getters.userInfo);
+        if (!userInfo.value?.requestId) {
+          Toast.fail("用户信息获取失败，请重新登录");
+          router.push("/login");
+          return;
+        }
+        const requestId = userInfo.value.requestId;
+        console.log(state.accountInfo);
+
+        if (actionType == "upgvip") {
+          // 升级
+          await upgvip({
+            id: Number(id),
+            requestId: requestId,
+            typeId: 104,
+          });
+        } else if (actionType == "freevip") {
+          // 赠送
+          await freevip({
+            id: Number(id),
+            requestId: requestId,
+            typeId: 3,
+            account: state.accountInfo.account,
+          });
+        } else if (actionType == "cancelvip") {
+          // 取消
+          await cancelvip({
+            member_id: Number(id),
+            requestId: requestId,
+          });
+        } else if (actionType == "buyvip") {
+          const birthday = getAge(state.accountInfo.birthday);
+          // 购买
+          await buyvip({
+            account: state.accountInfo.account,
+            birthday: birthday,
+            typeId: 104,
+            username: state.accountInfo.username || "ok",
+            requestId: requestId,
+          });
+        }
+
+        Toast.success(`${config.confirmText}成功`);
+        // 重新初始化数据
+        init();
+      } catch (err) {
+        console.error("卡操作失败：", err);
+        Toast.fail(err.message || "操作失败");
+      }
     };
 
     // 跳转到训练设置
@@ -526,18 +860,18 @@ export default {
       });
     };
 
-    onMounted(() => {
-      init();
-    });
     const getTrainTypeName = (course_id) => {
       const cat = state.cats.find((c) => c.value === course_id);
       return cat ? cat.label : "未知";
     };
+
+    onMounted(() => {
+      init();
+    });
+
     return {
       ...toRefs(state),
       totalTrainTime,
-      sortedTrainPlans,
-      handleCheckboxChange,
       validatePhone,
       formatTime,
       getAge,
@@ -545,9 +879,14 @@ export default {
       handlePlanCancel,
       handlePlanConfirm,
       showUpdate,
-      handleUpdateAccountConfirm,
+      handleUpdateConfirm,
+      handleDialogCancel,
+      handleStatusChange,
+      handleCardAction,
       gotoTrain,
       getTrainTypeName,
+      validatePassword,
+      showChangePassword,
     };
   },
 };
@@ -556,12 +895,24 @@ export default {
 <!-- 仿可滑动滑块的样式：简洁、无阻塞、高优先级 -->
 <style lang="less" scoped>
 // 基础变量
-@primary: #2563eb;
-@grey: #4e5969;
+@primary: #409eff;
+@grey: #606266;
 @light-grey: #f5f7fa;
-@border: #e5e6eb;
+@border: #e6e6e6;
 @slider-height: 4px;
 @slider-btn-size: 16px;
+
+// 颜色定义
+@color-danger: #f56c6c;
+@color-success: #67c23a;
+@color-warning: #e6a23c;
+@color-info: #909399;
+
+// 卡操作按钮颜色
+@upgrade-color: #409eff; // 蓝色 - 升级
+@refund-color: #f56c6c; // 红色 - 退卡
+@buy-color: #67c23a; // 绿色 - 购买
+@gift-color: #e6a23c; // 橙色 - 赠送
 
 // 头部样式
 .head-warper {
@@ -605,7 +956,7 @@ export default {
   border-radius: 8px;
   margin-bottom: 16px;
   padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
 
   .section-title {
     font-size: 16px;
@@ -628,6 +979,7 @@ export default {
   label {
     flex: 0 0 100px;
     color: #333;
+    font-size: 14px;
   }
 
   .value-wrap {
@@ -635,12 +987,45 @@ export default {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    font-size: 14px;
+    color: #666;
 
     .edit-arrow {
       color: #ccc;
       font-size: 16px;
       margin-left: 15px;
       cursor: pointer;
+    }
+
+    // 状态按钮样式
+    .status-btn {
+      padding: 6px 16px;
+      border-radius: 4px;
+      border: none;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+
+      &.disable-btn {
+        background: rgba(245, 108, 108, 0.1);
+        color: @color-danger;
+        border: 1px solid @color-danger;
+
+        &:hover {
+          background: rgba(245, 108, 108, 0.2);
+        }
+      }
+
+      &.restore-btn {
+        background: rgba(103, 194, 58, 0.1);
+        color: @color-success;
+        border: 1px solid @color-success;
+
+        &:hover {
+          background: rgba(103, 194, 58, 0.2);
+        }
+      }
     }
   }
 
@@ -658,6 +1043,60 @@ export default {
     right: 16px;
     color: #f56c6c;
     font-size: 12px;
+  }
+}
+
+// 卡操作按钮容器
+.card-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  .card-btn {
+    padding: 5px 15px;
+    border-radius: 6px;
+    border: none;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    &.upgvip-btn {
+      background: @upgrade-color;
+      color: #fff;
+
+      &:hover {
+        background: darken(@upgrade-color, 10%);
+      }
+    }
+
+    &.cancelvip-btn {
+      background: @refund-color;
+      color: #fff;
+
+      &:hover {
+        background: darken(@refund-color, 10%);
+      }
+    }
+
+    &.buyvip-btn {
+      background: @buy-color;
+      color: #fff;
+
+      &:hover {
+        background: darken(@buy-color, 10%);
+      }
+    }
+
+    &.freevip-btn {
+      background: @gift-color;
+      color: #fff;
+
+      &:hover {
+        background: darken(@gift-color, 10%);
+      }
+    }
   }
 }
 
@@ -684,16 +1123,12 @@ export default {
       display: flex;
       align-items: center;
       min-width: 70px; // 最小宽度
-      box-sizing: border-box;
-
       input {
         margin-right: 6px;
         flex-shrink: 0;
         width: 16px;
         height: 16px;
-        accent-color: @primary;
       }
-
       .radio-text {
         flex-shrink: 0;
         font-size: 14px;
@@ -740,12 +1175,15 @@ export default {
         align-items: center;
         gap: 8px;
         width: 100%;
+        // 核心修复：确保滑块容器可交互
+        pointer-events: auto;
 
         // 仿可滑动滑块：滑块样式（高优先级）
         :deep(.train-slider) {
           flex: 1;
           // 核心：确保滑块可交互，无样式阻塞
           pointer-events: auto !important;
+          touch-action: pan-x !important; // 允许水平滑动
 
           .van-slider__wrap {
             height: @slider-height;
@@ -772,7 +1210,7 @@ export default {
             border: 2px solid @primary;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             // 核心：提升层级，确保可点击
-            z-index: 10 !important;
+            z-index: 9999 !important;
             pointer-events: auto !important;
           }
 
@@ -858,24 +1296,29 @@ export default {
   }
 }
 
-// 弹窗样式
+// 弹窗样式修复
 .dialog-content {
-  padding: 20px 15px;
+  padding: 20px;
   font-size: 14px;
   width: 100%;
+  max-width: 450px;
+  margin: 0 auto;
   box-sizing: border-box;
 
   .title {
     font-size: 18px;
-    font-weight: bold;
+    font-weight: 600;
     text-align: center;
     margin-bottom: 24px;
+    color: @primary;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
   }
 
   // 弹窗表单行样式
   .dialog-form-row {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     padding: 0;
     background: transparent;
     border-bottom: none;
@@ -887,7 +1330,9 @@ export default {
       width: 70px;
       margin-right: 10px;
       text-align: right;
-      padding-top: 8px;
+      padding-top: 0;
+      font-size: 14px;
+      color: #333;
     }
 
     .form-input {
@@ -896,41 +1341,75 @@ export default {
       padding: 0 12px;
       border-radius: 6px;
       box-sizing: border-box;
+      border: 1px solid #dcdfe6;
+      font-size: 14px;
+      transition: border-color 0.2s;
+
+      &:focus {
+        outline: none;
+        border-color: @primary;
+        box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+      }
     }
 
     .error-tip {
-      position: static;
-      display: block;
-      margin-left: 80px;
-      margin-top: 5px;
-      width: 100%;
+      position: absolute;
+      left: 80px;
+      top: 42px;
+      margin: 0;
+      color: #f56c6c;
+      font-size: 12px;
+    }
+
+    // 密码提示
+    .password-tip {
+      position: absolute;
+      left: 80px;
+      top: 42px;
+      font-size: 12px;
+      color: #909399;
+    }
+  }
+
+  // 仅密码修改时的表单行样式
+  .password-only-row {
+    margin-bottom: 24px;
+
+    .error-tip {
+      top: 45px;
     }
   }
 
   // 弹窗单选行样式
   .radio-form-row {
     align-items: flex-start;
+    padding-top: 10px;
 
     .dialog-radio-group {
       flex: 1;
       display: flex;
-      flex-wrap: wrap; // 允许换行
-      gap: 15px 20px; // 行列间距
+      flex-wrap: wrap;
+      gap: 15px 20px;
       padding-top: 5px;
 
       .dialog-radio-item {
         display: flex;
         align-items: center;
-        min-width: 60px; // 最小宽度
+        min-width: 60px;
         box-sizing: border-box;
+        cursor: pointer;
 
         input {
           margin-right: 6px;
           flex-shrink: 0;
+          width: 16px;
+          height: 16px;
+          accent-color: @primary;
         }
 
         .radio-text {
           flex-shrink: 0;
+          font-size: 14px;
         }
       }
     }
@@ -949,16 +1428,27 @@ export default {
       text-align: center;
       border-radius: 8px;
       cursor: pointer;
+      font-size: 16px;
+      font-weight: 500;
+      transition: background-color 0.2s;
     }
 
     .confirm-botton {
       background: @primary;
       color: #fff;
+
+      &:hover {
+        background: lighten(@primary, 5%);
+      }
     }
 
     .cancel-botton {
-      background: #dde9fc;
-      color: @grey;
+      background: #f5f7fa;
+      color: #606266;
+
+      &:hover {
+        background: #e5e9f2;
+      }
     }
   }
 }
@@ -969,10 +1459,15 @@ export default {
 // 核心：全局确保滑块按钮可交互
 .van-slider__button {
   pointer-events: auto !important;
-  z-index: 10 !important;
+  z-index: 9999 !important;
 }
 // 修复移动端触摸滑动
 .van-slider {
   touch-action: pan-x !important;
+  pointer-events: auto !important;
+}
+// 确保滑块轨道可点击
+.van-slider__wrap {
+  pointer-events: auto !important;
 }
 </style>

@@ -30,6 +30,7 @@
             placeholder="请输入手机号"
             class="form-input"
             @blur="validatePhone"
+            @input="phoneInputHandler"
           />
           <span v-if="phoneError" class="error-tip">{{ phoneError }}</span>
         </div>
@@ -68,14 +69,15 @@
           </div>
         </div>
 
-        <!-- 年龄（日期选择器） -->
+        <!-- 出生日期（日期选择器） -->
         <div class="form-row">
           <label>出生日期</label>
           <input
             type="date"
-            v-model="accountInfo.birthday"
+            v-model="accountInfo.birthdayStr"
             class="form-input"
             placeholder="请选择出生日期"
+            @change="calculateAge"
           />
         </div>
 
@@ -95,33 +97,50 @@
       </div>
       <div class="op-wrap">
         <button class="op-btn cancel-btn" @click="handleCancel">取消</button>
-        <button class="op-btn confirm-btn" @click="handleCreate">开卡</button>
+        <button
+          class="op-btn confirm-btn"
+          @click="handleCreate"
+          :disabled="!formIsValid"
+        >
+          开卡
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { reactive, toRefs, onMounted, computed } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { reactive, toRefs, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { Toast } from "vant";
 import { buyvip } from "@/api/admin";
-
+import { useStore } from "@/store";
 export default {
   name: "account_create",
   setup() {
     const router = useRouter();
-    const route = useRoute();
+    const store = useStore();
 
-    // 响应式数据
+    // 计算7年前的日期（兼容所有浏览器）
+    function getDefaultBirthday() {
+      const now = new Date();
+      const sevenYearsAgo = new Date(now.setFullYear(now.getFullYear() - 7));
+      const year = sevenYearsAgo.getFullYear();
+      const month = (sevenYearsAgo.getMonth() + 1).toString().padStart(2, "0");
+      const day = sevenYearsAgo.getDate().toString().padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    // 响应式数据（简化结构，避免命名冲突）
     const state = reactive({
       accountInfo: {
-        account: "", // 手机号
-        birthdayTime: "", // 出生日期
-        sex: "0", // 性别，默认未知
-        typeId: "99", // 卡类型ID
         username: "", // 姓名
-        birthday: 0,
+        account: "", // 手机号
+        sex: "0", // 性别（默认未知）
+        birthdayStr: getDefaultBirthday(), // 出生日期字符串 YYYY-MM-DD
+        age: 0, // 计算后的年龄（整数）
+        typeId: "99", // 卡类型ID
+        requestId: "", // 请求ID（如果需要）
       },
       classifyList: [
         { id: 99, name: "体验卡" },
@@ -131,74 +150,139 @@ export default {
         { id: 104, name: "年卡Plus" },
       ],
       phoneError: "", // 手机号错误提示
+      formIsValid: false, // 表单是否有效
     });
 
+    // 手机号输入处理（输入时清空错误提示）
+    function phoneInputHandler() {
+      state.phoneError = "";
+      checkFormValid(); // 实时检查表单状态
+    }
+
     // 手机号格式验证
-    const validatePhone = () => {
+    function validatePhone() {
       const { account } = state.accountInfo;
-      // 清空之前的错误提示
       state.phoneError = "";
 
       if (!account) {
         state.phoneError = "手机号不能为空";
+        checkFormValid();
         return false;
       }
 
-      // 手机号正则验证（11位数字，以1开头）
-      const phoneReg = /^1[3-9]\d{9}$/;
+      // 兼容所有浏览器的手机号正则
+      const phoneReg = /^1[3456789]\d{9}$/;
       if (!phoneReg.test(account)) {
         state.phoneError = "请输入正确的手机号格式";
+        checkFormValid();
         return false;
       }
+      checkFormValid();
       return true;
-    };
+    }
 
-    // 根据出生日期计算年龄
-    const calculateAge = () => {
-      if (!state.accountInfo.birthdayTime) return 0;
-      const birthDate = new Date(state.accountInfo.birthdayTime);
-      const now = new Date();
-      let age = now.getFullYear() - birthDate.getFullYear();
-      // 校验月份和日期，未到生日则年龄减1
-      const monthDiff = now.getMonth() - birthDate.getMonth();
-      if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && now.getDate() < birthDate.getDate())
-      ) {
-        age--;
+    // 根据出生日期计算年龄（确保整数）
+    function calculateAge() {
+      try {
+        const birthday = new Date(state.accountInfo.birthdayStr);
+        // 验证日期有效性
+        if (birthday.toString() === "Invalid Date") {
+          state.accountInfo.age = 0;
+          checkFormValid();
+          return;
+        }
+
+        const now = new Date();
+        let age = now.getFullYear() - birthday.getFullYear();
+        const monthDiff = now.getMonth() - birthday.getMonth();
+
+        // 未到生日则年龄减1
+        if (
+          monthDiff < 0 ||
+          (monthDiff === 0 && now.getDate() < birthday.getDate())
+        ) {
+          age--;
+        }
+
+        // 确保年龄为非负整数
+        state.accountInfo.age = Math.max(0, parseInt(age, 10));
+        checkFormValid();
+      } catch (e) {
+        console.error("年龄计算错误：", e);
+        state.accountInfo.age = 0;
+        checkFormValid();
       }
-      return age < 0 ? 0 : Number(age);
-    };
+    }
+
+    // 检查表单是否有效（所有必填项已填写且验证通过）
+    function checkFormValid() {
+      const { username, account, birthdayStr, typeId } = state.accountInfo;
+
+      // 基础验证
+      const hasName = username.trim().length > 0;
+      const hasPhone = account.trim().length === 11 && !state.phoneError;
+      const hasBirthday = birthdayStr && birthdayStr !== "";
+      const hasType = typeId && typeId !== "";
+
+      // 更新表单状态
+      state.formIsValid = hasName && hasPhone && hasBirthday && hasType;
+    }
 
     // 取消按钮逻辑
-    const handleCancel = () => {
-      router.go(-1);
-    };
-
-    // 创建按钮逻辑（包含表单验证）
-    async function handleCreate() {
-      // 先验证手机号
-      if (!validatePhone()) return;
-      // 验证姓名
-      if (!state.accountInfo.username.trim()) {
-        Toast("请输入姓名");
-        return;
-      }
-      // 验证卡类型
-      if (!state.accountInfo.typeId) {
-        Toast("请选择卡类型");
-        return;
-      }
-      state.accountInfo.birthday = Number(calculateAge());
-      const { data } = await buyvip(state.accountInfo);
-      Toast("开卡成功");
+    function handleCancel() {
       router.go(-1);
     }
 
-    onMounted(async () => {});
+    // 开卡按钮逻辑（健壮性处理）
+    async function handleCreate() {
+      // 前置验证
+      if (!state.formIsValid) {
+        Toast("请完善所有必填信息并确保格式正确");
+        return;
+      }
+
+      try {
+        // 构建提交数据（类型转换 + 字段清理）
+        const submitData = {
+          account: state.accountInfo.account,
+          username: state.accountInfo.username,
+          sex: Number(state.accountInfo.sex),
+          birthday: state.accountInfo.age, // 年龄（整数）
+          typeId: Number(state.accountInfo.typeId),
+          requestId: state.accountInfo.requestId,
+        };
+
+        // 调用接口
+        await buyvip(submitData);
+        Toast.success("开卡成功");
+        // 延迟返回，让用户看到提示
+        setTimeout(() => {
+          router.go(-1);
+        }, 1000);
+      } catch (error) {
+        Toast.fail(error);
+      }
+    }
+
+    // 页面初始化
+    onMounted(() => {
+      // 获取用户信息
+      const userInfo = computed(() => store.getters.userInfo);
+      if (!userInfo.value?.requestId) {
+        Toast.fail("用户信息获取失败，请重新登录");
+        router.push("/login");
+        return;
+      }
+      state.accountInfo.requestId = userInfo.value.requestId;
+      // 计算默认年龄
+      calculateAge();
+      // 初始化表单状态检查
+      checkFormValid();
+    });
 
     return {
       ...toRefs(state),
+      phoneInputHandler,
       validatePhone,
       calculateAge,
       handleCancel,
@@ -262,10 +346,6 @@ export default {
   border-bottom: 1px solid #f0f0f0;
   position: relative;
 
-  &.last-child {
-    border-bottom: none;
-  }
-
   label {
     flex: 0 0 100px;
     color: #333;
@@ -281,11 +361,6 @@ export default {
     border-radius: 4px;
     font-size: 14px;
     color: #333;
-
-    &[readonly] {
-      background-color: #f5f7fa;
-      color: #909399;
-    }
   }
 
   .form-select {
@@ -323,19 +398,18 @@ export default {
 
   .radio-item {
     display: flex;
-
     cursor: pointer;
     font-size: 14px;
     color: #333;
+
     input[type="radio"] {
       margin-right: 6px;
-
       border: none;
     }
   }
 }
 
-// 操作按钮样式（优化布局）
+// 操作按钮样式（简化版，避免冲突）
 .op-wrap {
   display: flex;
   justify-content: flex-end;
@@ -355,19 +429,26 @@ export default {
       background-color: #f5f7fa;
       color: #666;
       border: 1px solid #e4e7ed;
+    }
 
-      &:hover {
-        background-color: #e4e7ed;
-      }
+    &.cancel-btn:hover {
+      background-color: #e4e7ed;
     }
 
     &.confirm-btn {
       background-color: #409eff;
       color: #fff;
+    }
 
-      &:hover {
-        background-color: #66b1ff;
-      }
+    &.confirm-btn:hover:not(:disabled) {
+      background-color: #66b1ff;
+    }
+
+    // 禁用状态（原生disabled样式，兼容性最好）
+    &:disabled {
+      background-color: #c0c4cc !important;
+      cursor: not-allowed;
+      opacity: 0.7;
     }
   }
 }

@@ -231,8 +231,10 @@ export default {
 @radius-sm: 8px;
 
 // 配色体系
-@primary-color: #5b86e5;
-@primary-dark: #4a6fcc;
+@primary-color: #5b86e5;          // 主蓝色
+@primary-dark: #4a6fcc;           // 深蓝
+@primary-light: #e8f0fe;          // 浅蓝
+@primary-lighter: #f5f8ff;        // 超浅蓝
 @success-color: #4cb782;
 @danger-color: #e06666;
 @text-primary: #333333;
@@ -245,7 +247,7 @@ export default {
 
 // 全局样式
 .content {
-  background-color: @bg-gray-light;
+  background-color: @bg-gray-light;  // 恢复原有页面背景
   min-height: 100vh;
 }
 
@@ -274,29 +276,47 @@ export default {
   }
 
   :deep(.header-title-wrap) {
-    background-color: @bg-white;
+    background-color: @bg-white;  // 恢复原有标题栏背景
     border-radius: @radius-sm;
     margin-bottom: 12px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
 
+  // ========== 核心修改：仅列表item样式 ==========
   :deep(.cell-list-wrap) {
     .cell-item {
-      background-color: @bg-white;
+      // 列表项背景改为蓝色（可根据需求调整深浅）
+      background-color: @primary-light;  // 浅蓝背景
+      // 可选：如果想要更深的蓝色背景，使用下面这行
+      // background-color: @primary-color;
+      
       border-radius: @radius-sm;
       margin-bottom: 8px;
       border: 1px solid @border-color;
       transition: all 0.2s ease;
+      
+      // 文字颜色适配（如果背景较深则改为白色）
+      color: @text-primary;
+      // 若使用深色背景，取消下面注释：
+      // color: @bg-white;
 
       &:hover {
         border-color: @primary-color;
-        background-color: #f0f5ff;
+        // hover时背景加深
+        background-color: @primary-lighter;
+        // 若使用深色背景，取消下面注释：
+        // background-color: @primary-dark;
+      }
+      
+      // 确保列表内文字颜色适配
+      * {
+        color: inherit !important;
       }
     }
   }
 }
 
-// ========== 弹窗样式（核心修复） ==========
+// ========== 弹窗样式（保持原有样式不变） ==========
 .dialog-content {
   width: 90%;
   max-width: 400px;
@@ -466,7 +486,7 @@ export default {
     }
   }
 
-  // 弹窗底部按钮区（修复显示问题）
+  // 弹窗底部按钮区
   .dialog-footer {
     display: flex;
     gap: 12px;

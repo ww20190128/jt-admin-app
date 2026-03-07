@@ -32,7 +32,8 @@ const actions = {
     commit("SET_TOKEN", "Bearer " + data.token);
     return new Promise(async (resolve, reject) => {
       try {
-        const { data } = await getUserInfo(data);
+        const { data, requestId } = await getUserInfo(data);
+        data.requestId = requestId;
         commit("SET_USERINFO", data);
         commit("SET_HASUSERINFO", true);
         resolve();

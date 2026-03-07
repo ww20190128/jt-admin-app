@@ -45,6 +45,31 @@ export function buyvip(params) {
     data: params,
   });
 }
+// 免费开卡
+export function freevip(params) {
+  return request({
+    url: "/members/freevip",
+    method: "post",
+    data: params,
+  });
+}
+
+// 取消会员
+export function cancelvip(params) {
+  return request({
+    url: "/members/cancelvip",
+    method: "post",
+    data: params,
+  });
+}
+// 升级会员
+export function upgvip(params) {
+  return request({
+    url: "/members/upgvip",
+    method: "post",
+    data: params,
+  });
+}
 // 获取方案
 export function getPlan(params) {
   return request({
@@ -106,7 +131,6 @@ export function gameList(params) {
   });
 }
 
-
 // 修改商户密码
 export function resetAgentPassword(params) {
   return request({
@@ -115,7 +139,6 @@ export function resetAgentPassword(params) {
     data: params,
   });
 }
-
 
 // 删除商户
 export function deleteAgent(params) {
@@ -130,6 +153,33 @@ export function deleteAgent(params) {
 export function updateAccount(params) {
   return request({
     url: "/members/" + params.id,
+    method: "put",
+    data: params,
+  });
+}
+
+// 修改用户密码
+export function changepassword(params) {
+  return request({
+    url: "/members/changepassword",
+    method: "post",
+    data: params,
+  });
+}
+
+// 修改用户状态
+export function updateAccountStatus(params) {
+  return request({
+    url: "/members/" + params.opType + "/" + params.id,
+    method: "get",
+    params: params,
+  });
+}
+
+// 设置游戏方案
+export function setPlanGame(params) {
+  return request({
+    url: "/plan/game",
     method: "put",
     data: params,
   });
