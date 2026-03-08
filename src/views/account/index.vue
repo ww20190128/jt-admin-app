@@ -5,6 +5,7 @@
       @onSearch="onNavSearch"
       class="search-bar"
     />
+
     <div class="content">
       <van-sidebar
         v-model="activeIndex"

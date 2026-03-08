@@ -15,7 +15,12 @@
 
     <!-- 主内容区域（加载完成后显示） -->
     <div v-else class="train-type-list">
-      <div v-for="catItem in cats" :key="catItem.value" class="train-type-item">
+      <div
+        v-for="catItem in cats"
+        :key="catItem.value"
+        class="train-type-item"
+        :class="{ active: isTrainTypeActive(catItem.value) }"
+      >
         <div class="train-type-header" @click="toggleExpand(catItem.value)">
           <span class="train-type-name">{{ catItem.label }}</span>
           <van-icon
@@ -117,7 +122,7 @@
 <script>
 import { reactive, toRefs, onMounted, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { gameList, setPlanGame, getPlan } from "@/api/admin";
+import { gameList, setPlan, getPlan } from "@/api/admin";
 import {
   Toast,
   Checkbox,
@@ -181,6 +186,7 @@ export default {
       expandedTypeIds: [],
       selectedPlans: {},
       isLoaded: false, // 数据是否加载完成
+      trainPlanData: {}, // 存储用户已开启的训练计划数据 { course_id: { id: 主键ID, course_games: [] } }
     });
 
     const gameListCache = {};
@@ -193,6 +199,11 @@ export default {
       });
       return count;
     });
+
+    // 判断训练类型是否为已开启状态
+    const isTrainTypeActive = (courseId) => {
+      return !!state.trainPlanData[courseId];
+    };
 
     // 筛选当前激活Tab的游戏列表
     function filterGameList(trainTypeId, tabId) {
@@ -301,11 +312,21 @@ export default {
 
         // 2. 调用getPlan接口获取已选数据
         const { data } = await getPlan({ id: id });
+        console.log("getPlan返回数据：", data);
+
+        // 初始化trainPlanData存储已开启的训练计划主键ID
+        state.trainPlanData = {};
 
         // 3. 处理返回的train_plan数据
         if (data?.train_plan && Array.isArray(data.train_plan)) {
           data.train_plan.forEach((planItem) => {
-            const { id, course_id, course_games } = planItem;
+            const { id: primaryId, course_id, course_games } = planItem;
+
+            // 存储已开启训练类型的主键ID
+            state.trainPlanData[course_id] = {
+              id: primaryId, // 开启的主键ID
+              course_games: course_games || [],
+            };
 
             // 只处理有游戏列表且course_id有效的数据
             if (
@@ -379,26 +400,33 @@ export default {
         if (planIds.length > 0) {
           // 解析key：格式为 "训练类型ID-子类型ID"
           const [trainTypeId, tabId] = key.split("-").map(Number);
-          const combinedId = trainTypeId * 10 + tabId; // 示例：1-0 → 10，2-3 → 23
+
+          // 核心修复：获取用户已开启的训练类型主键ID
+          let primaryId = null;
+          if (state.trainPlanData[trainTypeId]) {
+            // 使用已存在的主键ID
+            primaryId = state.trainPlanData[trainTypeId].id;
+          } else {
+            // 如果是新增的训练类型，可根据业务规则生成ID（这里保留原逻辑作为 fallback）
+            primaryId = trainTypeId * 10 + tabId;
+          }
 
           course_games.push({
-            id: combinedId, // 组合后的ID
+            id: primaryId, // 修复：使用正确的主键ID
             games: planIds.map(Number), // 确保games数组中的值都是数字类型
           });
         }
       });
 
-      console.log("转换后的course_games参数：", course_games);
-
       try {
-        await setPlanGame({
+        await setPlan({
           member_id: Number(id),
           course_games: course_games, // 使用新格式的参数
         });
         Toast.success("方案保存成功");
         router.go(-1);
       } catch (error) {
-        Toast.fail(error.message || "方案保存失败");
+        Toast.fail(error);
       }
     }
 
@@ -419,6 +447,7 @@ export default {
       handleTabChange,
       handleCheckboxChange,
       handleConfirm,
+      isTrainTypeActive, // 暴露判断方法到模板
     };
   },
 };
@@ -474,6 +503,17 @@ export default {
   border-radius: 8px;
   margin-bottom: 12px;
   overflow: hidden;
+  // 核心修复：已开启训练类型的样式标记
+  &.active {
+    border: 1px solid #1989fa; // 蓝色边框标记
+    .train-type-header {
+      background-color: #e8f4ff; // 浅蓝色背景
+      .train-type-name {
+        color: #1989fa; // 蓝色文字
+        font-weight: 600;
+      }
+    }
+  }
 }
 
 .train-type-header {
@@ -482,6 +522,7 @@ export default {
   padding: 12px 16px;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
+  transition: background-color 0.2s;
 
   .train-type-name {
     flex: 1;
@@ -489,6 +530,7 @@ export default {
     font-weight: 500;
     color: #333;
     margin-left: 8px;
+    transition: color 0.2s;
   }
 
   .expand-icon {

@@ -9,6 +9,10 @@
       <div class="attention-button animation-button" @click="handleAddUser">
         <span>开卡~</span>
       </div>
+
+      <div class="tryout-user-button" @click="gotoTryoutUser">
+        <span>体验用户</span>
+      </div>
     </view>
     <view class="right" v-if="false">
       <div @click="onSearch" class="search">
@@ -77,6 +81,12 @@ export default {
         query: {},
       });
     }
+    function gotoTryoutUser() {
+      router.push({
+        path: "/trialAccount/list",
+        query: {},
+      });
+    }
     return {
       ...toRefs(state),
       onSearch,
@@ -84,6 +94,7 @@ export default {
       wechatInfo,
       inputValue,
       handleAddUser,
+      gotoTryoutUser,
     };
   },
 };
@@ -178,7 +189,28 @@ export default {
     text-align: center !important;
   }
 }
-
+.tryout-user-button {
+  position: absolute;
+  right: 30px;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -khtml-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  padding: 0 10px;
+  background-image: linear-gradient(270deg, #8ec5fc 0%, #8ec5fc 100%);
+  cursor: pointer;
+  color: #fff;
+  height: 25px;
+  line-height: 25px;
+  text-align: center;
+  border-radius: 5px;
+  span {
+    font-size: @font-size-sm;
+    font-weight: 500;
+  }
+}
 // 关注按钮
 .attention-button {
   -moz-user-select: none;

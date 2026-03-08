@@ -4,14 +4,14 @@
       <div class="left" @click="$router.go(-1)">
         <img src="@/assets/images/icon/back.png" alt="返回" />
       </div>
-      <div class="right">
-        <div @click="gotoTrain" class="botton">训练设置</div>
-      </div>
     </div>
 
     <!-- 1. 用户详情区 -->
     <div class="section user-info-section" v-if="accountInfo">
-      <div class="section-title">用户详情</div>
+      <div class="section-title">
+        <div class="left">用户详情</div>
+        <div class="right botton" @click="handleSmslog">获取开卡短信</div>
+      </div>
       <div class="account-info-wrap">
         <div class="form-row">
           <label>姓名</label>
@@ -116,7 +116,10 @@
 
     <!-- 3. 训练方案区 - 核心仿可滑动滑块重构 -->
     <div class="section plan-section">
-      <h3 class="section-title">训练方案</h3>
+      <div class="section-title">
+        <div class="left">训练方案</div>
+        <div class="right botton" @click="gotoTrain">训练设置</div>
+      </div>
       <p class="duration-label">时长单位：分</p>
       <div class="plan-wrap">
         <div class="item-list">
@@ -363,6 +366,22 @@
         </div>
       </div>
     </BaseDialog>
+
+    <!--开卡短信弹窗 -->
+    <BaseDialog v-model:show="showSmslog" :showConfirmButton="false">
+      <div class="dialog-content sms-code-dialog-content">
+        <div class="title">开卡短信验证码</div>
+        <div class="sms-code-content">
+          <div class="code-display">
+            {{ smsCode }}
+          </div>
+          <button class="copy-btn" @click="copySmsCode">复制验证码</button>
+        </div>
+        <div class="botton-wrap">
+          <div class="cancel-botton" @click="closeSmslogDialog">取消</div>
+        </div>
+      </div>
+    </BaseDialog>
   </div>
 </template>
 
@@ -371,7 +390,7 @@ import { reactive, toRefs, onMounted, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Toast, Dialog, VanSlider, VanCheckbox } from "vant";
 
-import { getPlan, setPlan, trainlog } from "@/api/admin";
+import { getPlan, setPlan, smslog, trainlog } from "@/api/admin";
 
 import BaseDialog from "@/components/BaseDialog";
 import {
@@ -412,6 +431,8 @@ export default {
       },
       effect_train_plan: [], // 已经生效的训练计划
       trainPlanList: [],
+      showSmslog: false,
+      smsCode: "", // 存储验证码内容
       //===========================
 
       classifyList: [
@@ -860,6 +881,69 @@ export default {
       });
     };
 
+    // 开卡短信 - 核心修改
+    const handleSmslog = async () => {
+      try {
+        const { msg } = await smslog({
+          account: id,
+        });
+        if (msg) {
+          state.smsCode = msg; // 存储验证码
+          state.showSmslog = true; // 打开弹窗
+        } else {
+          Toast.fail(data?.msg);
+        }
+      } catch (error) {
+        console.error("获取开卡短信失败：", error);
+        Toast.fail("获取验证码失败，请重试");
+      }
+    };
+
+    // 复制验证码方法
+    const copySmsCode = () => {
+      // 兼容新版浏览器的复制API
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard
+          .writeText(state.smsCode)
+          .then(() => {
+            Toast.success("验证码已复制");
+          })
+          .catch(() => {
+            // 降级方案
+            fallbackCopyTextToClipboard(state.smsCode);
+          });
+      } else {
+        // 降级方案
+        fallbackCopyTextToClipboard(state.smsCode);
+      }
+    };
+
+    // 复制降级方案（兼容旧浏览器）
+    const fallbackCopyTextToClipboard = (text) => {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        Toast.success("验证码已复制");
+      } catch (error) {
+        console.error("复制失败:", error);
+        Toast.fail("复制失败，请手动复制");
+      }
+      document.body.removeChild(textArea);
+    };
+
+    // 关闭验证码弹窗
+    const closeSmslogDialog = () => {
+      state.showSmslog = false;
+      state.smsCode = ""; // 清空验证码
+    };
+
     const getTrainTypeName = (course_id) => {
       const cat = state.cats.find((c) => c.value === course_id);
       return cat ? cat.label : "未知";
@@ -887,6 +971,9 @@ export default {
       getTrainTypeName,
       validatePassword,
       showChangePassword,
+      handleSmslog,
+      copySmsCode,
+      closeSmslogDialog,
     };
   },
 };
@@ -959,12 +1046,30 @@ export default {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
 
   .section-title {
-    font-size: 16px;
     font-weight: 600;
     color: #333;
     margin-bottom: 16px;
     padding-bottom: 8px;
     border-bottom: 1px solid #eee;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .left {
+      font-size: 16px;
+    }
+
+    .botton {
+      height: 30px;
+      line-height: 30px;
+      padding: 0 8px;
+      background: @primary;
+      color: #fff;
+      border-radius: 5px;
+      font-size: 14px;
+      cursor: pointer;
+    }
   }
 }
 
@@ -1450,6 +1555,45 @@ export default {
         background: #e5e9f2;
       }
     }
+  }
+}
+
+// 新增：验证码弹窗样式
+.sms-code-dialog-content {
+  .sms-code-content {
+    text-align: center;
+    padding: 10px 0 20px;
+
+    .code-display {
+      font-size: 18px;
+      font-weight: 500;
+
+      padding: 16px;
+      background: #f5f7fa;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      word-break: break-all;
+    }
+
+    .copy-btn {
+      padding: 8px 24px;
+      background: @primary;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+
+      &:hover {
+        background: darken(@primary, 8%);
+      }
+    }
+  }
+
+  .botton-wrap {
+    margin-top: 0;
+    justify-content: center;
   }
 }
 </style>

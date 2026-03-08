@@ -87,6 +87,24 @@ export const routes = [
         },
       },
       {
+        path: "/trialAccount/list",
+        name: "trialAccount-list",
+        component: () => import("@/views/trialAccount/list"),
+        meta: {
+          title: "体验账号",
+          showTabBar: true,
+        },
+      },
+      {
+        path: "/trialAccount",
+        name: "trialAccount",
+        component: () => import("@/views/trialAccount/create"),
+        meta: {
+          title: "创建体验账号",
+          showTabBar: true,
+        },
+      },
+      {
         path: "/login",
         name: "login",
         component: () => import("@/views/mine/login"),

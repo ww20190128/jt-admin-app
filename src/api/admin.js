@@ -176,11 +176,11 @@ export function updateAccountStatus(params) {
   });
 }
 
-// 设置游戏方案
-export function setPlanGame(params) {
+// 开卡短信
+export function smslog(params) {
   return request({
-    url: "/plan/game",
-    method: "put",
-    data: params,
+    url: "/agent/smslog",
+    method: "get",
+    params: params,
   });
 }
