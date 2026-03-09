@@ -198,8 +198,8 @@ export default {
   -khtml-user-select: none;
   -o-user-select: none;
   user-select: none;
-  padding: 0 10px;
-  background-image: linear-gradient(270deg, #8ec5fc 0%, #8ec5fc 100%);
+  padding: 0 5px;
+  background: #8ec5fc;
   cursor: pointer;
   color: #fff;
   height: 25px;
@@ -207,7 +207,7 @@ export default {
   text-align: center;
   border-radius: 5px;
   span {
-    font-size: @font-size-sm;
+    font-size: @font-size-base;
     font-weight: 500;
   }
 }

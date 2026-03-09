@@ -96,8 +96,8 @@ export const routes = [
         },
       },
       {
-        path: "/trialAccount",
-        name: "trialAccount",
+        path: "/trialAccount/create",
+        name: "trialAccount/create",
         component: () => import("@/views/trialAccount/create"),
         meta: {
           title: "创建体验账号",

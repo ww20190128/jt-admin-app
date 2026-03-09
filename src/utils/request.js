@@ -7,11 +7,13 @@ import { useAgent } from "@/hooks/useAgent";
 import { parseQueryString } from "@/utils/tools";
 import { router } from "../router";
 import { h } from "vue";
+import { StringUtils } from "@/utils/stringutils";
 const service = axios.create({
   baseURL: process.env.VUE_APP_BASE_API, // 接口地址
   timeout: 30 * 1000, // 超时时间
 });
 import loginImg from "@/assets/images/login.png"; // 登录图片
+import md5 from "js-md5";
 // 请求前拦截
 service.interceptors.request.use(
   (config) => {
@@ -19,6 +21,7 @@ service.interceptors.request.use(
       window.loading?.clear?.();
       window.loading = loadingToast();
     }
+
     const token = store.getters.token;
     if (token) {
       config.headers["Authorization"] = token.includes("Bearer")
@@ -29,6 +32,22 @@ service.interceptors.request.use(
     if (pmerch) {
       config.headers["X-Pmerch"] = pmerch;
     }
+
+    /* 4) 生成签名 */
+    const nonce = StringUtils.randomNonce(24);
+    const ts = Math.floor(Date.now() / 1000).toString();
+    const sign = md5(method + path + body + ts + nonce)
+      .toString()
+      .toLowerCase();
+
+    /* 5) 写入头 */
+    config.headers = {
+      ...config.headers,
+      "X-Nonce": nonce,
+      "X-Time": ts,
+      "X-Sign": sign,
+    };
+
     return config;
   },
   (error) => {
@@ -96,7 +115,6 @@ service.interceptors.response.use(
       }
       return Promise.reject(responseData || "网络错误，请重试~");
     } else {
-     
       // 请求正常，返回数据
       return responseData;
     }

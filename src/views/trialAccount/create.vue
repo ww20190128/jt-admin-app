@@ -1,5 +1,5 @@
 <template>
-  <div class="account_create-wrap">
+  <div class="trialAccount_create-wrap">
     <div class="head-warper">
       <div class="left" @click="$router.go(-1)">
         <img src="@/assets/images/icon/back.png" alt="返回" />
@@ -8,7 +8,7 @@
 
     <!-- 用户详情区 -->
     <div class="section user-info-section">
-      <h3 class="section-title">新增用户</h3>
+      <h3 class="section-title">创建体验用户</h3>
       <div class="account-info-wrap">
         <!-- 姓名 -->
         <div class="form-row">
@@ -33,6 +33,15 @@
             @input="phoneInputHandler"
           />
           <span v-if="phoneError" class="error-tip">{{ phoneError }}</span>
+        </div>
+        <div class="form-row">
+          <label>密码</label>
+          <input
+            type="tel"
+            v-model="accountInfo.password"
+            placeholder="请输入密码"
+            class="form-input"
+          />
         </div>
 
         <!-- 性别（radio方式） -->
@@ -80,20 +89,6 @@
             @change="calculateAge"
           />
         </div>
-
-        <!-- 当前卡类型 -->
-        <div class="form-row">
-          <label>当前卡类型</label>
-          <select v-model="accountInfo.typeId" class="form-input form-select">
-            <option
-              v-for="value in classifyList"
-              :key="value.id"
-              :value="value.id"
-            >
-              {{ value.name }}
-            </option>
-          </select>
-        </div>
       </div>
       <div class="op-wrap">
         <button class="op-btn cancel-btn" @click="handleCancel">取消</button>
@@ -102,7 +97,7 @@
           @click="handleCreate"
           :disabled="!formIsValid"
         >
-          开卡
+          创建
         </button>
       </div>
     </div>
@@ -113,10 +108,10 @@
 import { reactive, toRefs, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Toast } from "vant";
-import { buyvip } from "@/api/admin";
+import { tryoutuseradd } from "@/api/tryoutUser";
 import { useStore } from "@/store";
 export default {
-  name: "account_create",
+  name: "trialAccount_create",
   setup() {
     const router = useRouter();
     const store = useStore();
@@ -253,8 +248,8 @@ export default {
         };
 
         // 调用接口
-        await buyvip(submitData);
-        Toast.success("开卡成功");
+        await tryoutuseradd(submitData);
+        Toast.success("体验账号创建成功！");
         // 延迟返回，让用户看到提示
         setTimeout(() => {
           router.go(-1);
@@ -293,7 +288,7 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.account_create-wrap {
+.trialAccount_create-wrap {
   max-width: 900px;
   margin: 0 auto;
   padding: 16px;
