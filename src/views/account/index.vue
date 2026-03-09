@@ -139,6 +139,7 @@ export default {
         { id: 102, name: "半年卡" },
         { id: 103, name: "年卡" },
         { id: 104, name: "年卡Plus" },
+        { id: 999, name: "体验账号" },
       ],
       nomore: false,
       loading: false,
@@ -153,6 +154,10 @@ export default {
     onActivated(() => {
       if (route.query.id) {
         state.query.classifyId = route.query.id;
+        if (route.query.id === 999) {
+          gotoTryoutUser();
+          return;
+        }
         setActiveIndex();
         onSearch();
       } else {
@@ -251,6 +256,11 @@ export default {
 
     function setSearch(id) {
       const search = `?id=${id}`;
+
+      if (id === 999) {
+        gotoTryoutUser();
+        return;
+      }
       window.history.replaceState(
         history.state,
         "",
@@ -291,7 +301,12 @@ export default {
       state.query.pageIndex++;
       getList();
     });
-
+    function gotoTryoutUser() {
+      router.push({
+        path: "/trialAccount/list",
+        query: {},
+      });
+    }
     return {
       handleItem,
       handleClassifyChange,
@@ -302,6 +317,7 @@ export default {
       getStatusText, // 新增
       getStatusClass, // 新增
       ...toRefs(state),
+      gotoTryoutUser,
     };
   },
 };
@@ -324,18 +340,6 @@ export default {
   position: relative;
   width: 100%;
   min-height: 100vh;
-
-  .search-bar {
-    position: fixed !important;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    max-width: 750px !important;
-    width: 100%;
-    z-index: 999;
-    box-sizing: content-box;
-    height: 40px;
-  }
 }
 
 .filter {

@@ -100,7 +100,7 @@ export default {
     const router = useRouter();
     const route = useRoute();
     const { id, name } = route.query;
-
+    document.title = "商户充值";
     const state = reactive({
       id: id || "",
       name: name || "",

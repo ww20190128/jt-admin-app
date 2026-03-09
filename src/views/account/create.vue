@@ -120,7 +120,7 @@ export default {
   setup() {
     const router = useRouter();
     const store = useStore();
-
+    document.title = "创建用户";
     // 计算7年前的日期（兼容所有浏览器）
     function getDefaultBirthday() {
       const now = new Date();

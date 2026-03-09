@@ -23,6 +23,7 @@
 
     <!-- 主要内容 -->
     <div class="content">
+      
       <!-- 审核订单区域 -->
       <div class="card" v-if="statusList.length">
         <div class="card-header">审核订单</div>
@@ -36,7 +37,7 @@
             :class="{ active: activeStatus === item.id }"
             @click="switchStatus(item.id)"
           >
-            {{ item.name }}
+            {{ item.name }}({{ item.totalNum }})
           </div>
         </div>
 
@@ -76,7 +77,7 @@
         </div>
 
         <!-- 空数据 -->
-        <div class="empty-tip" v-else>暂无相关订单</div>
+        <div class="empty-tip" v-else>暂无订单</div>
 
         <!-- 加载提示 -->
         <div class="load-tip" v-if="!nomore && topupList.length">加载中...</div>
@@ -118,16 +119,44 @@ export default {
       nomore: false,
       topupList: [],
       activeStatus: 1, // 当前激活的状态
+      statusCount: { // 新增：存储各状态的订单数量
+        1: 0, // 待处理
+        2: 0, // 已处理
+        3: 0  // 已拒绝
+      },
+      totalNum: 0, // 总数
     });
 
     // 初始化数据
     onMounted(async () => {
       if (store.getters.token) {
+        // 先获取各状态的总数
+        await getStatusTotalCount();
+        // 再获取当前状态的订单列表
         await init();
       } else {
         router.push({ path: "/login", query: {} });
       }
     });
+
+    // 新增：获取各状态订单总数
+    async function getStatusTotalCount() {
+      try {
+        // 循环获取每个状态的总数（如果接口支持批量获取，可优化为一次请求）
+        for (const status of [1, 2, 3]) {
+          const { data } = await topuplist({
+            pageIndex: 1,
+            pageSize: 1,
+            status
+          });
+          state.statusCount[status] = data?.count || 0;
+        }
+      } catch (error) {
+        Toast("获取订单统计失败");
+        console.error("获取统计失败：", error);
+      }
+    }
+
     // 格式化时间
     const formatTime = (time) => {
       if (!time) return "暂无";
@@ -140,21 +169,25 @@ export default {
       const hours = String(date.getHours()).padStart(2, "0");
       const minutes = String(date.getMinutes()).padStart(2, "0");
 
-      return `${year}-${month}-${day} ${hours}:${minutes}:${String(date.getSeconds()).padStart(2, "0")}`;
+      return `${year}-${month}-${day} ${hours}:${minutes}:${String(
+        date.getSeconds()
+      ).padStart(2, "0")}`;
     };
+
     // 用户信息
     const userInfo = computed(() => store.getters.userInfo);
+    
     // 背景图
     const backgroundImage = computed(() => {
       const config = store.getters.config;
       return config?.value?.userBgImg || bgUserImg;
     });
 
-    // 状态列表
+    // 状态列表（修复：关联statusCount中的实际数量）
     const statusList = computed(() => [
-      { id: 1, name: "待处理" },
-      { id: 2, name: "已处理" },
-      { id: 3, name: "已拒绝" },
+      { id: 1, name: "待处理", totalNum: state.statusCount[1] },
+      { id: 2, name: "已处理", totalNum: state.statusCount[2] },
+      { id: 3, name: "已拒绝", totalNum: state.statusCount[3] },
     ]);
 
     // 获取订单数据
@@ -164,8 +197,10 @@ export default {
         const { data } = await topuplist(state.query);
         // 切换状态时清空列表
         if (state.query.pageIndex === 1) {
+          state.totalNum = data?.count || 0;
           state.topupList = [];
         }
+
         // 追加数据
         if (data.list && data.list.length) {
           state.topupList = [...state.topupList, ...data.list];
@@ -174,8 +209,7 @@ export default {
           state.nomore = true;
         }
       } catch (error) {
-        console.error("获取订单失败:", error);
-        Toast("加载失败，请重试");
+        Toast(error);
         state.nomore = true;
       }
     }

@@ -14,6 +14,11 @@ const service = axios.create({
 });
 import loginImg from "@/assets/images/login.png"; // 登录图片
 import md5 from "js-md5";
+
+
+
+
+
 // 请求前拦截
 service.interceptors.request.use(
   (config) => {
@@ -36,6 +41,17 @@ service.interceptors.request.use(
     /* 4) 生成签名 */
     const nonce = StringUtils.randomNonce(24);
     const ts = Math.floor(Date.now() / 1000).toString();
+
+    let baseurl = config.baseURL || "";
+    /* 1) 拆 URL */
+    const fullUrl = (baseurl || "") + (config.url || "");
+    let [path, queryStr = ""] = fullUrl.split("?", 2);
+    path = path?.replace(baseurl, ""); // 去掉域名
+    let gdata = !config.params ? "" : StringUtils.buildQuery(config.params);
+    let pdata = !config.data ? "" : JSON.stringify(config.data);
+
+    const body = gdata + pdata; //
+    const method = (config.method || "get").toUpperCase();
     const sign = md5(method + path + body + ts + nonce)
       .toString()
       .toLowerCase();
@@ -53,7 +69,7 @@ service.interceptors.request.use(
   (error) => {
     console.log(error);
     return Promise.reject(error);
-  }
+  },
 );
 
 // 请求后拦截{"status":0,"errorCode":"","data":{"testId":"1"}}
@@ -124,6 +140,6 @@ service.interceptors.response.use(
     console.error("错误信息：", error);
     window.loading?.clear?.();
     return Promise.reject(error);
-  }
+  },
 );
 export default service;

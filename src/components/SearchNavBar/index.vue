@@ -10,9 +10,9 @@
         <span>开卡~</span>
       </div>
 
-      <div class="tryout-user-button" @click="gotoTryoutUser">
+      <!-- <div class="tryout-user-button" @click="gotoTryoutUser">
         <span>体验用户</span>
-      </div>
+      </div> -->
     </view>
     <view class="right" v-if="false">
       <div @click="onSearch" class="search">
@@ -191,7 +191,7 @@ export default {
 }
 .tryout-user-button {
   position: absolute;
-  right: 30px;
+  left: 40%;
   -moz-user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
